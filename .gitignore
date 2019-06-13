@@ -1,0 +1,11 @@
+*.a
+*.o
+*~
+.deps/
+/autom4te.cache/
+/src/sdtbs/sdtbs
+/config.h
+/config.log
+/config.status
+/stamp-h1
+Makefile
