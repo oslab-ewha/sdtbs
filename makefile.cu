@@ -1,2 +1,2 @@
 .cu.o:
-	@NVCC_PATH@ -c -I../include @CUDA_CPPFLAGS@ @CUDA_GENCODE@ $< -o $@
+	@NVCC_PATH@ -dc $(AM_CPPFLAGS) @CUDA_CPPFLAGS@ @CUDA_GENCODE@ $< -o $@

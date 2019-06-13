@@ -144,134 +144,70 @@ calc_int_double_tb(int n_iters1, int n_iters2)
 		return calc_double(n_iters2);
 }
 
-__global__ static void
-loopcalc(double *result, unsigned calctype, int n_iters1, int n_iters2)
+__device__ int
+loopcalc(int args[])
 {
-	double	*my;
+	int	calctype = args[0];
+	int	n_iters1 = args[1];
+	int	n_iters2 = args[2];
+	int	ret = 0;
 
-	my = result + threadIdx.x + (blockDim.x * threadIdx.y);
 	switch (calctype) {
 	case 1:
-		*(int *)my = calc_int(n_iters1);
+		ret = (int)calc_int(n_iters1);
 		break;
 	case 2:
-		*(float *)my = calc_float(n_iters1);
+		ret = (int)calc_float(n_iters1);
 		break;
 	case 3:
-		*my = calc_double(n_iters1);
+		ret = (int)calc_double(n_iters1);
 		break;
 	case 4:
-		*my = calc_float_double(n_iters1, n_iters2);
+		ret = (int)calc_float_double(n_iters1, n_iters2);
 		break;
 	case 5:
-		*my = calc_int_float(n_iters1, n_iters2);
+		ret = (int)calc_int_float(n_iters1, n_iters2);
 		break;
 	case 6:
-		*my = calc_int_double(n_iters1, n_iters2);
+		ret = (int)calc_int_double(n_iters1, n_iters2);
 		break;
 	case 7:
-		*my = calc_float_double_tb(n_iters1, n_iters2);
+		ret = (int)calc_float_double_tb(n_iters1, n_iters2);
 		break;
 	case 8:
-		*my = calc_int_float_tb(n_iters1, n_iters2);
+		ret = (int)calc_int_float_tb(n_iters1, n_iters2);
 		break;
 	case 9:
-		*my = calc_int_double_tb(n_iters1, n_iters2);
+		ret = (int)calc_int_double_tb(n_iters1, n_iters2);
 		break;
 	default:
-		*(int *)my = calc_empty(n_iters1);
+		ret = (int)calc_empty(n_iters1);
 		break;
 	}
+	return ret;
 }
 
-static int
-parse_args(const char *c_args, unsigned *pcalctype, int *pgridsize, int *pblksize, int *pn_iters1, int *pn_iters2)
+__global__ static void
+loopcalc_kernel(int args[])
 {
-	char	*args, *comma;
-
-	if (c_args == NULL)
-		return 0;
-	args = strdup(c_args);
-	comma = strchr(args, ',');
-	if (comma != NULL) {
-		char	*str_gridsize = comma + 1;
-
-		*comma = '\0';
-		comma = strchr(str_gridsize, ',');
-		if (comma != NULL) {
-			char	*str_blksize = comma + 1;
-
-			*comma = '\0';
-			comma = strchr(str_blksize, ',');
-			if (comma != NULL) {
-				char	*str_iters1 = comma + 1;
-
-				*comma = '\0';
-				comma = strchr(str_iters1, ',');
-				if (comma != NULL) {
-					if (sscanf(comma + 1, "%u", pn_iters2) != 1) {
-						printf("invalid argument: %s\n", c_args);
-						return -1;
-					}
-				}
-				if (sscanf(str_iters1, "%u", pn_iters1) != 1) {
-					printf("invalid argument: %s\n", c_args);
-					return -1;
-				}
-			}
-			if (sscanf(str_blksize, "%u", pblksize) != 1) {
-				printf("invalid argument: %s\n", c_args);
-				return -1;
-			}
-		}
-		if (sscanf(str_gridsize, "%u", pgridsize) != 1) {
-			printf("invalid argument: %s\n", c_args);
-			return -1;
-		}
-	}
-
-	if (sscanf(args, "%u", pcalctype) != 1) {
-		printf("invalid argument: %s\n", c_args);
-		return -1;
-	}
-	free(args);
-	return 0;
+	args[0] = loopcalc(args);
 }
 
-extern "C" int
-bench_loopcalc(cudaStream_t strm, const char *args)
+int
+bench_native_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, int args[])
 {
-	double		*result;
 	cudaError_t	err;
-	unsigned	calctype;
-	int	gridsize = 4;
-	int	blksize = 16;
-	int	n_iters1 = 10;
-	int	n_iters2 = 10;
 
-	if (parse_args(args, &calctype, &blksize, &gridsize, &n_iters1, &n_iters2) < 0)
-		return 1;
+	dim3 dimGrid(n_tbs_x, 1);
+	dim3 dimBlock(n_threads_x, 1);
 
-	err = cudaMalloc((void **)&result, blksize * sizeof(double));
-	if (err != cudaSuccess) {
-		printf("cudaMalloc failed: err: %s\n", cudaGetErrorString(err));
-		return 1;
-	}
-
-	dim3 dimBlock(blksize, 1);
-	dim3 dimGrid(gridsize, 1);
-
-	loopcalc<<<dimGrid, dimBlock, 0, strm>>>(result, calctype, n_iters1, n_iters2);
+	loopcalc_kernel<<<dimGrid, dimBlock, 0, strm>>>(args);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		printf("error: %s\n", cudaGetErrorString(err));
 		return 1;
 	}
-
-	cudaStreamSynchronize(strm);
-
-	cudaFree(result);
 
 	return 0;
 }

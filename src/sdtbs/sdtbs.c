@@ -1,7 +1,5 @@
 #include "sdtbs.h"
 
-extern void run_macrotb(void);
-
 static void
 usage(void)
 {
@@ -9,11 +7,14 @@ usage(void)
 "sdtbs <options> <benchmark spec>...\n"
 "<options>:\n"
 "  -d <device no>: select GPU device\n"
+"  -x: run direct mode\n"
 "  -h: help\n"
 "<benchmark spec>: <code>:<arg string>\n"
 " <code>:\n"
 		);
 }
+
+static BOOL	direct_mode;
 
 static void
 error(const char *fmt, ...)
@@ -29,6 +30,31 @@ error(const char *fmt, ...)
 		fprintf(stderr, "error: %s\n", msg);
 		free(msg);
 	}
+}
+
+static int
+parse_benchargs(int argc, char *argv[])
+{
+	int	i;
+
+	if (argc == 0) {
+		error("no benchmark provided");
+		return -1;
+	}
+	for (i = 0; i < argc; i++) {
+		char	*colon, *args = NULL;
+
+		colon = strchr(argv[i], ':');
+		if (colon != NULL) {
+			*colon = '\0';
+			args = strdup(colon + 1);
+		}
+		if (!add_bench(argv[i], args)) {
+			error("invalid benchmark code or arguments: %s", argv[i]);
+			return -1;
+		}
+	}
+	return 0;
 }
 
 static void
@@ -50,10 +76,13 @@ parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "d:h")) != -1) {
+	while ((c = getopt(argc, argv, "d:xh")) != -1) {
 		switch (c) {
 		case 'd':
 			select_device(optarg);
+			break;
+		case 'x':
+			direct_mode = TRUE;
 			break;
 		case 'h':
 			usage();
@@ -73,6 +102,13 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-	run_macrotb();
+	if (parse_benchargs(argc - optind, argv + optind) < 0) {
+		return 2;
+	}
+
+	if (direct_mode)
+		run_native_tbs();
+	else
+		run_sd_tbs();
 	return 0;
 }
