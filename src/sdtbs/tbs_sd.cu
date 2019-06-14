@@ -1,45 +1,51 @@
-#include "sdtbs.h"
-
-#include "benchmgr.h"
-
-typedef struct {
-	int	skid;
-	int	n_tbs_x, n_tbs_y;
-	int	n_threads_x, n_threads_y;
-	int	args[MAX_ARGS];
-} subkernel_t;
+#include "sdtbs_cu.h"
 
 __device__ int loopcalc(int args[]);
 
-__global__ static void
-kernel_macro_TB(int n_benches, subkernel_t *sks)
+__device__ static uint
+get_smid(void)
 {
-	int	i;
+	uint	ret;
+	asm("mov.u32 %0, %smid;" : "=r"(ret));
+	return ret;
+}
 
-	for (i = 0; i < n_benches; i++, sks++) {
-		switch (sks->skid) {
-		case 1:
-			sks->args[0] = loopcalc(sks->args);
-			break;
-		default:
-			break;
-		}
+__global__ static void
+kernel_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
+{
+	micro_tb_t	*mtb;
+	int	n_mtbs_per_width;
+	int	res;
+
+	n_mtbs_per_width = blockDim.x / N_THREADS_PER_mTB;
+	mtb = mtbs + get_smid() * n_mtbs_per_sm + n_mtbs_per_width * threadIdx.y + threadIdx.x / N_THREADS_PER_mTB;
+
+	switch (mtb->skid) {
+	case 1:
+		res = loopcalc(mtb->args);
+		break;
+	default:
+		goto out;
 	}
+	if (threadIdx.x % 32 == 0)
+		mtb->args[0] = res;
+out:
+	__syncthreads();
 }
 
 static void
-launch_macro_TB(subkernel_t *d_subkernels)
+launch_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 {
 	cudaError_t	err;
 
-	dim3 dimGrid(9, 1);
-	dim3 dimBlock(32, 1);
+	dim3 dimGrid(n_sm_count, 1);
+	dim3 dimBlock(n_threads_per_tb, 1);
 
-	kernel_macro_TB<<<dimGrid, dimBlock, 0>>>(n_benches, d_subkernels);
+	kernel_macro_TB<<<dimGrid, dimBlock, 0>>>(n_mtbs_per_sm, mtbs);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
-		printf("error: %s\n", cudaGetErrorString(err));
+		error("kernel launch error: %s\n", cudaGetErrorString(err));
 		return;
 	}
 
@@ -49,23 +55,18 @@ launch_macro_TB(subkernel_t *d_subkernels)
 extern "C" void
 run_sd_tbs(void)
 {
-	subkernel_t	subkernels[MAX_BENCHES];
-	subkernel_t	*d_subkernels;
-	benchrun_t	*brun;
-	int	i;
+	micro_tb_t	*d_mtbs;
 
-	cudaMalloc(&d_subkernels, sizeof(subkernel_t) * n_benches);
-	brun = benchruns;
-	for (i = 0; i < n_benches; i++, brun++) {
-		subkernels[i].skid = brun->info->skid;
-		subkernels[i].n_tbs_x = brun->n_tbs_x;
-		subkernels[i].n_tbs_y = brun->n_tbs_y;
-		subkernels[i].n_threads_x = brun->n_threads_x;
-		subkernels[i].n_threads_y = brun->n_threads_y;
-		memcpy(subkernels[i].args, brun->args, sizeof(int) * MAX_ARGS);
-	}
+	setup_gpu_devinfo();
+	setup_micro_tbs();
 
-	cudaMemcpy(d_subkernels, subkernels, n_benches * sizeof(subkernel_t), cudaMemcpyHostToDevice);
+	cudaMalloc(&d_mtbs, n_mtbs * sizeof(micro_tb_t));
 
-	launch_macro_TB(d_subkernels);
+	sched_rr();
+
+	cudaMemcpy(d_mtbs, mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyHostToDevice);
+
+	launch_macro_TB(n_mtbs_per_sm, d_mtbs);
+
+	cudaFree(d_mtbs);
 }

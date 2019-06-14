@@ -16,21 +16,7 @@ usage(void)
 
 static BOOL	direct_mode;
 
-static void
-error(const char *fmt, ...)
-{
-	char	*msg;
-	va_list	ap;
-	int	n;
-	
-	va_start(ap, fmt);
-	n = vasprintf(&msg, fmt, ap);
-	va_end(ap);
-	if (n >= 0) {
-		fprintf(stderr, "error: %s\n", msg);
-		free(msg);
-	}
-}
+unsigned	devno;
 
 static int
 parse_benchargs(int argc, char *argv[])
@@ -60,8 +46,6 @@ parse_benchargs(int argc, char *argv[])
 static void
 select_device(const char *str_devno)
 {
-	unsigned	devno;
-
 	if (sscanf(str_devno, "%u", &devno) != 1) {
 		error("%s: invalid GPU device number", str_devno);
 		return;

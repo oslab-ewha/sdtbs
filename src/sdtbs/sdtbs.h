@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #define TRUE	1
 #define FALSE	0
@@ -19,6 +20,12 @@ typedef int	BOOL;
 extern "C" {
 #endif
 
+#define ASSERT(cond)                    do { assert(cond); } while (0)
+#define FATAL(exitcode, fmt, ...)       do { error(fmt, ## __VA_ARGS__); exit(exitcode); } while (0)
+
+extern unsigned	devno;
+
+void error(const char *fmt, ...);
 BOOL add_bench(const char *code, const char *args);
 BOOL select_gpu_device(unsigned devno);
 
