@@ -1,6 +1,4 @@
-#include "sdtbs.h"
-
-#include "benchmgr.h"
+#include "sdtbs_cu.h"
 
 extern "C" void
 run_native_tbs(void)

@@ -1,5 +1,4 @@
-#include "sdtbs.h"
-#include "benchmgr.h"
+#include "sdtbs_cu.h"
 
 int bench_native_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, int args[]);
 
