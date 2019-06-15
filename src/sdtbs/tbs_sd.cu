@@ -66,7 +66,7 @@ run_sd_tbs(void)
 
 	cudaMalloc(&d_mtbs, n_mtbs * sizeof(micro_tb_t));
 
-	sched_rr();
+	run_schedule();
 
 	cudaMemcpy(d_mtbs, mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyHostToDevice);
 

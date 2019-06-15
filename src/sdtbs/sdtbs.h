@@ -32,6 +32,8 @@ BOOL select_gpu_device(unsigned devno);
 void run_native_tbs(void);
 void run_sd_tbs(void);
 
+void setup_sched(const char *strpol);
+
 #ifdef __cplusplus
 }
 #endif

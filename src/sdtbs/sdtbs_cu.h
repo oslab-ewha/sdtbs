@@ -35,6 +35,11 @@ typedef struct {
 	void *	args[MAX_ARGS];
 } micro_tb_t;
 
+typedef struct {
+	const char	*name;
+	unsigned (*get_tb_sm)(unsigned n_tbs_x, unsigned n_tbs_y);
+} sched_t;
+
 extern benchrun_t	benchruns[MAX_BENCHES];
 
 extern micro_tb_t	*mtbs;
@@ -43,6 +48,6 @@ BOOL setup_gpu_devinfo(void);
 void setup_micro_tbs(void);
 micro_tb_t *get_mtb(int id_sm);
 
-void sched_rr(void);
+void run_schedule(void);
 
 #endif

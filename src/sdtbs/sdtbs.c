@@ -7,6 +7,8 @@ usage(void)
 "sdtbs <options> <benchmark spec>...\n"
 "<options>:\n"
 "  -d <device no>: select GPU device\n"
+"  -p <policy>: scheduling policy\n"
+"     supported policies: rr(round-robin), default\n"
 "  -x: run direct mode\n"
 "  -h: help\n"
 "<benchmark spec>: <code>:<arg string>\n"
@@ -69,10 +71,13 @@ parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "d:xh")) != -1) {
+	while ((c = getopt(argc, argv, "d:p:xh")) != -1) {
 		switch (c) {
 		case 'd':
 			select_device(optarg);
+			break;
+		case 'p':
+			setup_sched(optarg);
 			break;
 		case 'x':
 			direct_mode = TRUE;

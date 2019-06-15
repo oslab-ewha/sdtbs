@@ -102,7 +102,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_sdtbs_OBJECTS = sdtbs.$(OBJEXT) tbs_sd.$(OBJEXT) \
 	tbs_native.$(OBJEXT) benchmgr.$(OBJEXT) micro_tb.$(OBJEXT) \
-	sched_rr.$(OBJEXT) misc.$(OBJEXT)
+	sched.$(OBJEXT) sched_rr.$(OBJEXT) misc.$(OBJEXT)
 sdtbs_OBJECTS = $(am_sdtbs_OBJECTS)
 sdtbs_DEPENDENCIES = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 	../../benchmarks/inhouse/gma/libgma.a
@@ -264,7 +264,7 @@ top_srcdir = @top_srcdir@
 CLEANFILES = *~
 DISTCLEANFILES = *~
 LINK = @NVCC_PATH@ @CUDA_GENCODE@ -o $@
-sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu micro_tb.cu sched_rr.cu misc.cu
+sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu micro_tb.cu sched.cu sched_rr.cu misc.cu
 sdtbs_LDADD = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 		../../benchmarks/inhouse/gma/libgma.a
 
