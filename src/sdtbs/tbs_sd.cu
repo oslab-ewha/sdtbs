@@ -1,6 +1,7 @@
 #include "sdtbs_cu.h"
 
-__device__ int loopcalc(int args[]);
+__device__ int loopcalc(void *args[]);
+__device__ int gma(void *args[]);
 
 __device__ static uint
 get_smid(void)
@@ -24,11 +25,14 @@ kernel_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 	case 1:
 		res = loopcalc(mtb->args);
 		break;
+	case 2:
+		res = gma(mtb->args);
+		break;
 	default:
 		goto out;
 	}
 	if (threadIdx.x % 32 == 0)
-		mtb->args[0] = res;
+		mtb->args[0] = (void *)(long long)res;
 out:
 	__syncthreads();
 }

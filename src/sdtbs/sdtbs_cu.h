@@ -13,24 +13,26 @@ extern unsigned n_mtbs;
 extern unsigned n_mtbs_per_sm;
 extern int	n_benches;
 
-typedef int (*bench_native_t)(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, int args[]);
+typedef int (*cookarg_func_t)(void *args[]);
+typedef int (*bench_func_t)(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[]);
 
 typedef struct {
 	const char	*code;
 	int	skid;
-	bench_native_t	bench_native;
+	cookarg_func_t	cookarg_func;
+	bench_func_t	bench_func;
 } benchinfo_t;
 
 typedef struct {
 	benchinfo_t	*info;
 	int	n_tbs_x, n_tbs_y;
 	int	n_threads_x, n_threads_y;
-	int	args[MAX_ARGS];
+	void *	args[MAX_ARGS];
 } benchrun_t;
 
 typedef struct {
 	int	skid;
-	int	args[MAX_ARGS];
+	void *	args[MAX_ARGS];
 } micro_tb_t;
 
 extern benchrun_t	benchruns[MAX_BENCHES];

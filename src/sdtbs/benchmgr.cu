@@ -1,12 +1,15 @@
 #include "sdtbs_cu.h"
 
-int bench_native_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, int args[]);
+int bench_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[]);
+int bench_gma(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[]);
+int cookarg_gma(void *args[]);
 
 benchrun_t	benchruns[MAX_BENCHES];
 int	n_benches;
 
 static benchinfo_t	benchinfos[] = {
-	{ "lc", 1, bench_native_loopcalc },
+	{ "lc", 1, NULL, bench_loopcalc },
+	{ "gma", 2, cookarg_gma, bench_gma },
 	{ NULL, 0, NULL }
 };
 
@@ -46,24 +49,27 @@ parse_int(const char **pc_args, int *pval)
 }
 
 static BOOL
-parse_args(const char *c_args, benchrun_t *pbrun)
+parse_args(const char *c_args, benchrun_t *brun)
 {
 	int	i;
 
-	if (!parse_int(&c_args, &pbrun->n_tbs_x))
+	if (!parse_int(&c_args, &brun->n_tbs_x))
 		return FALSE;
-	if (!parse_int(&c_args, &pbrun->n_tbs_y))
+	if (!parse_int(&c_args, &brun->n_tbs_y))
 		return FALSE;
-	if (!parse_int(&c_args, &pbrun->n_threads_x))
+	if (!parse_int(&c_args, &brun->n_threads_x))
 		return FALSE;
-	if (!parse_int(&c_args, &pbrun->n_threads_y))
+	if (!parse_int(&c_args, &brun->n_threads_y))
 		return FALSE;
 
 	for (i = 0; i < MAX_ARGS; i++) {
+		int	arg;
+
 		if (*c_args == '\0')
 			return TRUE;
-		if (!parse_int(&c_args, &pbrun->args[i]))
+		if (!parse_int(&c_args, &arg))
 			return FALSE;
+		brun->args[i] = (void *)(long long)arg;
 	}
 	return TRUE;
 }
@@ -80,6 +86,12 @@ add_bench(const char *code, const char *args)
 	brun->info = info;
 	if (!parse_args(args, brun))
 		return FALSE;
+	if (info->cookarg_func != NULL) {
+		if (info->cookarg_func(brun->args) < 0) {
+			error("failed to cook arguments");
+			return FALSE;
+		}
+	}
 	n_benches++;
 	return TRUE;
 }

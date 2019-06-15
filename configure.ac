@@ -40,6 +40,7 @@ AC_CONFIG_FILES([Makefile
 		 src/sdtbs/Makefile
                  benchmarks/Makefile
                  benchmarks/inhouse/Makefile
-                 benchmarks/inhouse/loopcalc/Makefile])
+                 benchmarks/inhouse/loopcalc/Makefile
+                 benchmarks/inhouse/gma/Makefile])
 
 AC_OUTPUT

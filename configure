@@ -5347,7 +5347,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/sdtbs/Makefile benchmarks/Makefile benchmarks/inhouse/Makefile benchmarks/inhouse/loopcalc/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/sdtbs/Makefile benchmarks/Makefile benchmarks/inhouse/Makefile benchmarks/inhouse/loopcalc/Makefile benchmarks/inhouse/gma/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6103,6 +6103,7 @@ do
     "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
     "benchmarks/inhouse/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/Makefile" ;;
     "benchmarks/inhouse/loopcalc/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/loopcalc/Makefile" ;;
+    "benchmarks/inhouse/gma/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/gma/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

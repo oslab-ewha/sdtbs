@@ -12,12 +12,14 @@ usage(void)
 "<benchmark spec>: <code>:<arg string>\n"
 " <code>:\n"
 "  lc: repetitive calculation(in-house)\n"
+"  gma: global memory access(in-house)\n"
 " <arg string>:\n"
 "   NOTE: First 4 arguments are <grid width>,<grid height>,<tb width>,<tb heigh>\n"
-"   lc: <calculation type>,<# iterations>,<# iterations for calculation type greater than 3>\n"
+"   lc: <calculation type>,<iterations>,<# iterations for calculation type greater than 3>\n"
 "        calculation type: 1(int),2(float),3(double),default:empty\n"
 "                          4(float/double),5(int/float),6(int/double)\n"
 "                          7(float/double tb),8(int/float tb),9(int/double tb)\n"
+"   gma: <global mem in KB>,<iterations>\n"
 		);
 }
 

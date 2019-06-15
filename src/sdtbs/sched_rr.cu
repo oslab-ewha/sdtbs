@@ -17,7 +17,7 @@ sched_rr_tb(benchrun_t *brun)
 
 		mtb = get_mtb(id_sm);
 		mtb->skid = brun->info->skid;
-		memcpy(mtb->args, brun->args, sizeof(int) * MAX_ARGS);
+		memcpy(mtb->args, brun->args, sizeof(void *) * MAX_ARGS);
 	}
 }
 

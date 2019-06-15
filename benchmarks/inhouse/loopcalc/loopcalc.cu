@@ -145,11 +145,11 @@ calc_int_double_tb(int n_iters1, int n_iters2)
 }
 
 __device__ int
-loopcalc(int args[])
+loopcalc(void *args[])
 {
-	int	calctype = args[0];
-	int	n_iters1 = args[1];
-	int	n_iters2 = args[2];
+	int	calctype = (int)(long long)args[0];
+	int	n_iters1 = (int)(long long)args[1];
+	int	n_iters2 = (int)(long long)args[2];
 	int	ret = 0;
 
 	switch (calctype) {
@@ -188,20 +188,20 @@ loopcalc(int args[])
 }
 
 __global__ static void
-loopcalc_kernel(int args[])
+kernel_loopcalc(void *args[])
 {
-	args[0] = loopcalc(args);
+	((int *)args)[0] = loopcalc(args);
 }
 
 int
-bench_native_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, int args[])
+bench_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[])
 {
 	cudaError_t	err;
 
 	dim3 dimGrid(n_tbs_x, 1);
 	dim3 dimBlock(n_threads_x, 1);
 
-	loopcalc_kernel<<<dimGrid, dimBlock, 0, strm>>>(args);
+	kernel_loopcalc<<<dimGrid, dimBlock, 0, strm>>>(args);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
