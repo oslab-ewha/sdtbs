@@ -61,7 +61,10 @@ run_sd_tbs(void)
 {
 	micro_tb_t	*d_mtbs;
 
-	setup_gpu_devinfo();
+	if (!setup_gpu_devinfo()) {
+		error("no gpu found");
+		return;
+	}
 	setup_micro_tbs();
 
 	cudaMalloc(&d_mtbs, n_mtbs * sizeof(micro_tb_t));

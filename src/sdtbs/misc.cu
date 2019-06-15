@@ -35,7 +35,7 @@ setup_gpu_devinfo(void)
 
 	err = cudaGetDeviceProperties(&prop, devno);
 	if (err != cudaSuccess) {
-		error("device prop error: %s\n", cudaGetErrorString(err));
+		error("failed to get gpu device properties: %s", cudaGetErrorString(err));
 		return FALSE;
 	}
 
