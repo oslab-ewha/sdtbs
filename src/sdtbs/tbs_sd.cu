@@ -43,7 +43,7 @@ launch_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 	cudaError_t	err;
 
 	dim3 dimGrid(n_sm_count, 1);
-	dim3 dimBlock(n_threads_per_tb, 1);
+	dim3 dimBlock(n_threads_per_MTB, 1);
 
 	kernel_macro_TB<<<dimGrid, dimBlock, 0>>>(n_mtbs_per_sm, mtbs);
 

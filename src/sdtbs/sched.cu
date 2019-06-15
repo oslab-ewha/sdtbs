@@ -1,12 +1,16 @@
 #include "sdtbs_cu.h"
 
 extern sched_t	sched_rr;
+extern sched_t	sched_rrf;
 
 static sched_t	*all_sched[] = {
-	&sched_rr, NULL
+	&sched_rr, &sched_rrf, NULL
 };
 
 sched_t	*sched = &sched_rr;
+
+unsigned n_grid_width, n_grid_height;
+unsigned n_tb_width, n_tb_height;
 
 extern "C" void
 setup_sched(const char *strpol)
@@ -24,14 +28,13 @@ setup_sched(const char *strpol)
 }
 
 static void
-sched_micro_tb(benchrun_t *brun, int id_sm)
+sched_micro_tb(benchrun_t *brun, unsigned id_sm)
 {
 	int	i;
 
-	ASSERT(brun->n_threads_x % N_THREADS_PER_mTB == 0 &&
-	       brun->n_threads_x * brun->n_threads_y % N_THREADS_PER_mTB == 0);
+	ASSERT(brun->n_tb_width % N_THREADS_PER_mTB == 0);
 
-	for (i = 0; i < brun->n_threads_x * brun->n_threads_y; i += N_THREADS_PER_mTB) {
+	for (i = 0; i < brun->n_tb_width * brun->n_tb_height; i += N_THREADS_PER_mTB) {
 		micro_tb_t	*mtb;
 
 		mtb = get_mtb(id_sm);
@@ -45,9 +48,14 @@ sched_brun(benchrun_t *brun)
 {
 	int	i, j;
 
-	for (i = 0; i < brun->n_tbs_y; i++) {
-		for (j = 0; j < brun->n_tbs_x; j++) {
-			int	id_sm = sched->get_tb_sm(j, i);
+	n_grid_width = brun->n_grid_width;
+	n_grid_height = brun->n_grid_height;
+	n_tb_width = brun->n_tb_width;
+	n_tb_height = brun->n_tb_height;
+
+	for (i = 0; i < brun->n_grid_height; i++) {
+		for (j = 0; j < brun->n_grid_width; j++) {
+			unsigned	id_sm = sched->get_tb_sm(j, i);
 			sched_micro_tb(brun, id_sm);
 		}
 	}

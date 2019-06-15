@@ -8,7 +8,7 @@
 #define N_THREADS_PER_mTB	32
 
 extern unsigned n_sm_count;
-extern unsigned n_threads_per_tb;
+extern unsigned n_threads_per_MTB;
 extern unsigned n_mtbs;
 extern unsigned n_mtbs_per_sm;
 extern int	n_benches;
@@ -25,8 +25,8 @@ typedef struct {
 
 typedef struct {
 	benchinfo_t	*info;
-	int	n_tbs_x, n_tbs_y;
-	int	n_threads_x, n_threads_y;
+	int	n_grid_width, n_grid_height;
+	int	n_tb_width, n_tb_height;
 	void *	args[MAX_ARGS];
 } benchrun_t;
 
@@ -44,9 +44,14 @@ extern benchrun_t	benchruns[MAX_BENCHES];
 
 extern micro_tb_t	*mtbs;
 
+extern unsigned n_grid_width, n_grid_height;
+extern unsigned n_tb_width, n_tb_height;
+
 BOOL setup_gpu_devinfo(void);
 void setup_micro_tbs(void);
-micro_tb_t *get_mtb(int id_sm);
+
+micro_tb_t *get_mtb(unsigned id_sm);
+BOOL is_sm_avail(int id_sm, unsigned n_threads);
 
 void run_schedule(void);
 

@@ -62,12 +62,12 @@ cookarg_gma(void *args[])
 }
 
 int
-bench_gma(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[])
+bench_gma(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width, int n_tb_height, void *args[])
 {
 	cudaError_t	err;
 
-	dim3 dimGrid(n_tbs_x, 1);
-	dim3 dimBlock(n_threads_x, 1);
+	dim3 dimGrid(n_grid_width, n_grid_height);
+	dim3 dimBlock(n_tb_width, n_tb_height);
 
 	kernel_gma<<<dimGrid, dimBlock, 0, strm>>>(args);
 

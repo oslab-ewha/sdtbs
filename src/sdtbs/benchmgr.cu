@@ -53,13 +53,13 @@ parse_args(const char *c_args, benchrun_t *brun)
 {
 	int	i;
 
-	if (!parse_int(&c_args, &brun->n_tbs_x))
+	if (!parse_int(&c_args, &brun->n_grid_width))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_tbs_y))
+	if (!parse_int(&c_args, &brun->n_grid_height))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_threads_x))
+	if (!parse_int(&c_args, &brun->n_tb_width))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_threads_y))
+	if (!parse_int(&c_args, &brun->n_tb_height))
 		return FALSE;
 
 	for (i = 0; i < MAX_ARGS; i++) {

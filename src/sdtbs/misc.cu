@@ -1,7 +1,7 @@
 #include "sdtbs.h"
 
 unsigned	n_sm_count;
-unsigned	n_threads_per_tb;
+unsigned	n_threads_per_MTB;	/* per macro TB */
 
 extern "C" BOOL
 select_gpu_device(unsigned devno)
@@ -40,7 +40,7 @@ setup_gpu_devinfo(void)
 	}
 
 	n_sm_count = prop.multiProcessorCount;
-	n_threads_per_tb = prop.maxThreadsPerBlock;
+	n_threads_per_MTB = prop.maxThreadsPerBlock;
 
 	return TRUE;
 }
