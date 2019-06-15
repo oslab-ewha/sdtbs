@@ -22,6 +22,8 @@ get_mtb(unsigned id_sm)
 {
 	micro_tb_t	*mtb;
 
+	if (n_cur_mtbs_per_sm[id_sm] == n_mtbs_per_sm)
+		return NULL;
 	mtb = mtbs + id_sm * n_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm];
 	n_cur_mtbs_per_sm[id_sm]++;
 	return mtb;

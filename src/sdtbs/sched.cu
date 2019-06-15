@@ -38,6 +38,9 @@ sched_micro_tb(benchrun_t *brun, unsigned id_sm)
 		micro_tb_t	*mtb;
 
 		mtb = get_mtb(id_sm);
+		if (mtb == NULL) {
+			FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
+		}
 		mtb->skid = brun->info->skid;
 		memcpy(mtb->args, brun->args, sizeof(void *) * MAX_ARGS);
 	}
