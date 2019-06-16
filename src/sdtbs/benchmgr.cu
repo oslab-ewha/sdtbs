@@ -53,6 +53,8 @@ parse_args(const char *c_args, benchrun_t *brun)
 {
 	int	i;
 
+	if (c_args == NULL)
+		return FALSE;
 	if (!parse_int(&c_args, &brun->n_grid_width))
 		return FALSE;
 	if (!parse_int(&c_args, &brun->n_grid_height))
