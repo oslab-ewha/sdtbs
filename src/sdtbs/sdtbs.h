@@ -23,6 +23,7 @@ extern "C" {
 #define ASSERT(cond)                    do { assert(cond); } while (0)
 #define FATAL(exitcode, fmt, ...)       do { error(fmt, ## __VA_ARGS__); exit(exitcode); } while (0)
 
+extern BOOL	direct_mode;
 extern unsigned	devno;
 
 void error(const char *fmt, ...);

@@ -26,7 +26,7 @@ usage(void)
 		);
 }
 
-static BOOL	direct_mode;
+BOOL	direct_mode;
 
 unsigned	devno;
 
