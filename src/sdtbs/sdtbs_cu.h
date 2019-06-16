@@ -24,16 +24,18 @@ typedef struct {
 } benchinfo_t;
 
 typedef struct {
+	int	skid;
+	void *	args[MAX_ARGS];
+} micro_tb_t;
+
+typedef struct {
 	benchinfo_t	*info;
 	int	n_grid_width, n_grid_height;
 	int	n_tb_width, n_tb_height;
 	void *	args[MAX_ARGS];
+	micro_tb_t	*mtb_first;
+	int	res;
 } benchrun_t;
-
-typedef struct {
-	int	skid;
-	void *	args[MAX_ARGS];
-} micro_tb_t;
 
 typedef struct {
 	const char	*name;
@@ -54,5 +56,6 @@ micro_tb_t *get_mtb(unsigned id_sm);
 BOOL is_sm_avail(int id_sm, unsigned n_threads);
 
 void run_schedule(void);
+void collect_mtb_result(void);
 
 #endif

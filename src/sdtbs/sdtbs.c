@@ -97,6 +97,8 @@ parse_options(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
+	BOOL	res;
+
 	if (parse_options(argc, argv) < 0) {
 		return 1;
 	}
@@ -105,9 +107,10 @@ main(int argc, char *argv[])
 		return 2;
 	}
 
-	if (direct_mode)
-		run_native_tbs();
-	else
-		run_sd_tbs();
-	return 0;
+	res = direct_mode ? run_native_tbs(): run_sd_tbs();
+	if (res) {
+		report_bench_result();
+		return 0;
+	}
+	return 4;
 }

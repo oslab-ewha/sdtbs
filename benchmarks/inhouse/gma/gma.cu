@@ -14,9 +14,10 @@ rand_xorshift(unsigned seed)
 __device__ static unsigned
 get_memidx(int memidx, int gmemsize)
 {
-	memidx = (int)(gmemsize * (float)rand_xorshift(memidx) * (1.0 / 4294967296.0));
-	memidx = memidx % gmemsize;
-	return memidx;
+	unsigned	value;
+
+	value = (unsigned)(gmemsize * rand_xorshift(memidx * 19373193));
+	return value % (gmemsize * 1024);
 }
 
 __device__ int
@@ -29,7 +30,7 @@ gma(void *args[])
 	int	value = 0;
 	int	i, j;
 
-	memidx = get_memidx(threadIdx.x + (blockDim.x * threadIdx.y), gmemsize);
+	memidx = get_memidx(391 + (threadIdx.x % 32) * 2913751, gmemsize);
 	for (i = 0; i < n_iters; i++) {
 		for (j = 0; j < 10000; j++) {
 			memidx = get_memidx(memidx, gmemsize);
@@ -42,7 +43,11 @@ gma(void *args[])
 __global__ static void
 kernel_gma(void *args[])
 {
-	((int *)args)[0] = gma(args);
+	int	ret;
+
+	ret = gma(args);
+	if (threadIdx.x == 0 && threadIdx.y == 0)
+		args[0] = (void *)(long long)ret;
 }
 
 int
@@ -50,12 +55,20 @@ cookarg_gma(void *args[])
 {
 	unsigned char	*gmem;
 	int	gmemsize = (int)(long long)args[0];
+	char	buf[1024];
+	int	i;
 	cudaError_t	err;
 
 	err = cudaMalloc((void **)&gmem, gmemsize * 1024);
 	if (err != cudaSuccess) {
 		printf("cudaMalloc failed: err: %s\n", cudaGetErrorString(err));
 		return -1;
+	}
+	for (i = 0; i < 1024; i++) {
+		buf[i] = i;
+	}
+	for (i = 0; i < gmemsize; i++) {
+		cudaMemcpy(gmem + i * 1024, buf, 1024, cudaMemcpyHostToDevice);
 	}
 	args[2] = gmem;
 	return 0;
@@ -74,7 +87,7 @@ bench_gma(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		printf("error: %s\n", cudaGetErrorString(err));
-		return 1;
+		return -1;
 	}
 
 	return 0;

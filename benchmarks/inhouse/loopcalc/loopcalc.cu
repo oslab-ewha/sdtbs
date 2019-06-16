@@ -2,6 +2,13 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <math_constants.h>
+
+/* NOTE: nvcc over 9.0 has a problem of compilation freeze.
+ * This seems to relate to ptx optimization.
+ * nvcc with -G disables all optimizations. loopcalc Makefile.am has this option.
+ */
+
 __device__ static int
 calc_empty(int n_iters)
 {
@@ -17,77 +24,55 @@ calc_empty(int n_iters)
 __device__ static int
 calc_int(int n_iters)
 {
-	int	value1 = 9, value2 = 32, value3 = 2911, value4 = 1992;
+	int	value = 9;
 	int     i;
 
         for (i = 0; i < n_iters; i++) {
-		value1 *= value2;
-		value2 *= value3;
-		value4 *= (value2 * value3 * value1);
+		int	j;
+
+		for (j = 0; j < 100000; j++) {
+			value = value * 1923192273 + 3921192123;
+		}
         }
-        return value1 * value2 * value3 * value4;
+        return value;
 }
 
 __device__ static float
 calc_float(int n_iters)
 {
-	float	value1 = 9.99f, value2 = 32.19f, value3 = 2911.2f, value4 = 1.9921f;
+	float	value = 9.99f;
 	int     i;
 
         for (i = 0; i < n_iters; i++) {
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
+		int	j;
+
+		for (j = 0; j < 10000; j++) {
+			if (value == CUDART_INF_F)
+				value = 9.99f;
+			else
+				value = value * 2911.2123f + 1.992813f;
+		}
         }
-        return value1 * value2 * value3 * value4;
+        return value;
 }
 
 __device__ static double
 calc_double(int n_iters)
 {
-	double	value1 = 9.9923123132, value2 = 32.192123123213, value3 = 2911.2123123123123, value4 = 1.9921123123123;
+	double	value = 32.192123123213;
 	int	i;
 
 	for (i = 0; i < n_iters; i++) {
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= value2; value2 *= value3; value3 *= value4; value4 *= value1;
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
-		value1 *= (value2 * value3 * value4);
-		value2 *= (value1 * value3 * value4);
-		value3 *= (value2 * value1 * value4);
-		value4 *= (value2 * value3 * value1);
+		int	j;
+
+		for (j = 0; j < 10000; j++) {
+			if (value == CUDART_INF_F)
+				value = 329.99128493;
+			else
+				value = value * 2911.2134324 + 1.992812932;
+		}
 	}
-	return value1 * value2 * value3 * value4;
+	return value;
 }
 
 __device__ static double
@@ -157,10 +142,10 @@ loopcalc(void *args[])
 		ret = (int)calc_int(n_iters1);
 		break;
 	case 2:
-		ret = (int)calc_float(n_iters1);
+		ret = (int)fmodf(calc_float(n_iters1), 10000000.0f);
 		break;
 	case 3:
-		ret = (int)calc_double(n_iters1);
+		ret = (int)fmod(calc_double(n_iters1), 100000000.0);
 		break;
 	case 4:
 		ret = (int)calc_float_double(n_iters1, n_iters2);
@@ -190,7 +175,11 @@ loopcalc(void *args[])
 __global__ static void
 kernel_loopcalc(void *args[])
 {
-	((int *)args)[0] = loopcalc(args);
+	int	res;
+
+	res = loopcalc(args);
+	if (threadIdx.x == 0 && threadIdx.y == 0)
+		args[0] = (void *)(long long)res;
 }
 
 int
@@ -206,7 +195,7 @@ bench_loopcalc(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		printf("error: %s\n", cudaGetErrorString(err));
-		return 1;
+		return -1;
 	}
 
 	return 0;

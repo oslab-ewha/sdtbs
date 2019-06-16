@@ -27,10 +27,12 @@ extern unsigned	devno;
 
 void error(const char *fmt, ...);
 BOOL add_bench(const char *code, const char *args);
+void report_bench_result(void);
+
 BOOL select_gpu_device(unsigned devno);
 
-void run_native_tbs(void);
-void run_sd_tbs(void);
+BOOL run_native_tbs(void);
+BOOL run_sd_tbs(void);
 
 void setup_sched(const char *strpol);
 

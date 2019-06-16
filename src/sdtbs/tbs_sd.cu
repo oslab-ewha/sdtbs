@@ -37,7 +37,7 @@ out:
 	__syncthreads();
 }
 
-static void
+static BOOL
 launch_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 {
 	cudaError_t	err;
@@ -50,20 +50,21 @@ launch_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		error("kernel launch error: %s\n", cudaGetErrorString(err));
-		return;
+		return FALSE;
 	}
 
 	cudaDeviceSynchronize();
+	return TRUE;
 }
 
-extern "C" void
+extern "C" BOOL
 run_sd_tbs(void)
 {
 	micro_tb_t	*d_mtbs;
 
 	if (!setup_gpu_devinfo()) {
 		error("no gpu found");
-		return;
+		return FALSE;
 	}
 	setup_micro_tbs();
 
@@ -73,7 +74,14 @@ run_sd_tbs(void)
 
 	cudaMemcpy(d_mtbs, mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyHostToDevice);
 
-	launch_macro_TB(n_mtbs_per_sm, d_mtbs);
+	if (!launch_macro_TB(n_mtbs_per_sm, d_mtbs))
+		return FALSE;
+
+	cudaMemcpy(mtbs, d_mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyDeviceToHost);
 
 	cudaFree(d_mtbs);
+
+	collect_mtb_result();
+
+	return TRUE;
 }

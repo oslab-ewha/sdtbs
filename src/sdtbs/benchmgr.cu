@@ -95,3 +95,15 @@ add_bench(const char *code, const char *args)
 	n_benches++;
 	return TRUE;
 }
+
+extern "C" void
+report_bench_result(void)
+{
+	benchrun_t	*brun;
+	int	i;
+
+	brun = benchruns;
+	for (i = 0; i < n_benches; i++, brun++) {
+		printf("%s: %d\n", brun->info->code, brun->res);
+	}
+}

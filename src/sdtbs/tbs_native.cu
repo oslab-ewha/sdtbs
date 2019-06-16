@@ -1,6 +1,6 @@
 #include "sdtbs_cu.h"
 
-extern "C" void
+extern "C" BOOL
 run_native_tbs(void)
 {
 	benchrun_t	*brun;
@@ -11,11 +11,19 @@ run_native_tbs(void)
 	cudaStreamCreate(&strm);
 	for (i = 0; i < n_benches; i++, brun++) {
 		void 	**d_args;
+		int	ret;
 
 		cudaMalloc(&d_args, sizeof(void *) * MAX_ARGS);
 		cudaMemcpy(d_args, brun->args, sizeof(void *) * MAX_ARGS, cudaMemcpyHostToDevice);
-		brun->info->bench_func(strm, brun->n_grid_width, brun->n_grid_height, brun->n_tb_width, brun->n_tb_height, d_args);
+		ret = brun->info->bench_func(strm, brun->n_grid_width, brun->n_grid_height, brun->n_tb_width, brun->n_tb_height, d_args);
+		if (ret < 0) {
+			return FALSE;
+		}
 		cudaStreamSynchronize(strm);
+		cudaMemcpy(brun->args, d_args, sizeof(void *) * MAX_ARGS, cudaMemcpyDeviceToHost);
 		cudaFree(d_args);
+		brun->res = (int)(long long)brun->args[0];
 	}
+
+	return TRUE;
 }

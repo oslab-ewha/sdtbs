@@ -41,6 +41,9 @@ sched_micro_tb(benchrun_t *brun, unsigned id_sm)
 		if (mtb == NULL) {
 			FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
 		}
+		if (i == 0) {
+			brun->mtb_first = mtb;
+		}
 		mtb->skid = brun->info->skid;
 		memcpy(mtb->args, brun->args, sizeof(void *) * MAX_ARGS);
 	}
@@ -73,5 +76,17 @@ run_schedule(void)
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
 		sched_brun(brun);
+	}
+}
+
+void
+collect_mtb_result(void)
+{
+	benchrun_t	*brun;
+	int	i;
+
+	brun = benchruns;
+	for (i = 0; i < n_benches; i++, brun++) {
+		brun->res = (int)(long long)brun->mtb_first->args[0];
 	}
 }
