@@ -58,4 +58,7 @@ BOOL is_sm_avail(int id_sm, unsigned n_threads);
 void run_schedule(void);
 void collect_mtb_result(void);
 
+void init_tickcount(void);
+unsigned long long get_tickcount(void);
+
 #endif

@@ -5,7 +5,7 @@
 static cudaStream_t	strms[MAX_BENCHES];
 
 extern "C" BOOL
-run_native_tbs(void)
+run_native_tbs(unsigned *pticks)
 {
 	benchrun_t	*brun;
 	void 	**d_args_brun;
@@ -16,6 +16,8 @@ run_native_tbs(void)
 		cudaStreamCreate(strms + i);
 		cudaMemcpy((char *)d_args_brun + SIZE_ARGS * i, brun->args, SIZE_ARGS, cudaMemcpyHostToDevice);
 	}
+
+	init_tickcount();
 
 	for (i = 0, brun = benchruns; i < n_benches; i++, brun++) {
 		int	ret;
@@ -28,6 +30,8 @@ run_native_tbs(void)
 
 	for (i = 0; i < n_benches; i++)
 		cudaStreamSynchronize(strms[i]);
+
+	*pticks = get_tickcount();
 
 	for (i = 0, brun = benchruns; i < n_benches; i++, brun++) {
 		cudaMemcpy(brun->args, d_args_brun + SIZE_ARGS * i, SIZE_ARGS, cudaMemcpyDeviceToHost);

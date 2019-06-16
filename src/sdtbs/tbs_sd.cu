@@ -58,7 +58,7 @@ launch_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 }
 
 extern "C" BOOL
-run_sd_tbs(void)
+run_sd_tbs(unsigned *pticks)
 {
 	micro_tb_t	*d_mtbs;
 
@@ -74,8 +74,12 @@ run_sd_tbs(void)
 
 	cudaMemcpy(d_mtbs, mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyHostToDevice);
 
+	init_tickcount();
+
 	if (!launch_macro_TB(n_mtbs_per_sm, d_mtbs))
 		return FALSE;
+
+	*pticks = get_tickcount();
 
 	cudaMemcpy(mtbs, d_mtbs, n_mtbs * sizeof(micro_tb_t), cudaMemcpyDeviceToHost);
 

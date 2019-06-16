@@ -98,6 +98,7 @@ int
 main(int argc, char *argv[])
 {
 	BOOL	res;
+	unsigned	elapsed;
 
 	if (parse_options(argc, argv) < 0) {
 		return 1;
@@ -107,9 +108,9 @@ main(int argc, char *argv[])
 		return 2;
 	}
 
-	res = direct_mode ? run_native_tbs(): run_sd_tbs();
+	res = direct_mode ? run_native_tbs(&elapsed): run_sd_tbs(&elapsed);
 	if (res) {
-		report_bench_result();
+		report(elapsed);
 		return 0;
 	}
 	return 4;
