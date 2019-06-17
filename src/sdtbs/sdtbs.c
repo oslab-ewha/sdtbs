@@ -22,7 +22,7 @@ usage(void)
 "        calculation type: 1(int),2(float),3(double),default:empty\n"
 "                          4(float/double),5(int/float),6(int/double)\n"
 "                          7(float/double tb),8(int/float tb),9(int/double tb)\n"
-"   gma: <global mem in KB>,<iterations>\n"
+"   gma: <global mem in KB>,<stride for mem access>,<iterations>\n"
 		);
 }
 

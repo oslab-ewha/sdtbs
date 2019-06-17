@@ -2,39 +2,21 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-__device__ static unsigned
-rand_xorshift(unsigned seed)
-{
-	seed ^= (seed << 13);
-	seed ^= (seed >> 17);
-	seed ^= (seed << 5);
-	return seed;
-}
-
-__device__ static unsigned
-get_memidx(int memidx, int gmemsize)
-{
-	unsigned	value;
-
-	value = (unsigned)(gmemsize * rand_xorshift(memidx * 19373193));
-	return value % (gmemsize * 1024);
-}
-
 __device__ int
 gma(void *args[])
 {
 	int	gmemsize = (int)(long long)args[0];
-	int	n_iters = (int)(long long)args[1];
-	unsigned char	*gmem = (unsigned char *)args[2];
-	int	memidx;
+	int	stride = (int)(long long)args[1];
+	int	n_iters = (int)(long long)args[2];
+	unsigned char	*gmem = (unsigned char *)args[3];
+	unsigned	memidx;
 	int	value = 0;
 	int	i, j;
 
-	memidx = get_memidx(391 + (threadIdx.x % 32) * 2913751, gmemsize);
+	memidx = clock() * 19239913 * threadIdx.x;
 	for (i = 0; i < n_iters; i++) {
-		for (j = 0; j < 10000; j++) {
-			memidx = get_memidx(memidx, gmemsize);
-			value += gmem[memidx];
+		for (j = 0; j < 10000; j ++, memidx += stride) {
+			value += gmem[memidx % (gmemsize * 1024)];
 		}
 	}
 	return value;
@@ -70,7 +52,7 @@ cookarg_gma(void *args[])
 	for (i = 0; i < gmemsize; i++) {
 		cudaMemcpy(gmem + i * 1024, buf, 1024, cudaMemcpyHostToDevice);
 	}
-	args[2] = gmem;
+	args[3] = gmem;
 	return 0;
 }
 
