@@ -175,11 +175,7 @@ loopcalc(void *args[])
 __global__ static void
 kernel_loopcalc(void *args[])
 {
-	int	res;
-
-	res = loopcalc(args);
-	if (threadIdx.x == 0 && threadIdx.y == 0)
-		args[0] = (void *)(long long)res;
+	loopcalc(args);
 }
 
 int

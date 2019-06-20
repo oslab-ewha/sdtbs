@@ -25,11 +25,7 @@ gma(void *args[])
 __global__ static void
 kernel_gma(void *args[])
 {
-	int	ret;
-
-	ret = gma(args);
-	if (threadIdx.x == 0 && threadIdx.y == 0)
-		args[0] = (void *)(long long)ret;
+	gma(args);
 }
 
 int

@@ -16,23 +16,20 @@ kernel_macro_TB(int n_mtbs_per_sm, micro_tb_t *mtbs)
 {
 	micro_tb_t	*mtb;
 	int	n_mtbs_per_width;
-	int	res;
 
 	n_mtbs_per_width = blockDim.x / N_THREADS_PER_mTB;
 	mtb = mtbs + get_smid() * n_mtbs_per_sm + n_mtbs_per_width * threadIdx.y + threadIdx.x / N_THREADS_PER_mTB;
 
 	switch (mtb->skid) {
 	case 1:
-		res = loopcalc(mtb->args);
+		loopcalc(mtb->args);
 		break;
 	case 2:
-		res = gma(mtb->args);
+		gma(mtb->args);
 		break;
 	default:
 		goto out;
 	}
-	if (threadIdx.x % 32 == 0)
-		mtb->args[0] = (void *)(long long)res;
 out:
 	__syncthreads();
 }

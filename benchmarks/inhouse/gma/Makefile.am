@@ -1,6 +1,8 @@
 CLEANFILES = *~
 DISTCLEANFILES = *~
 
+AM_CPPFLAGS = -G
+
 noinst_LIBRARIES = libgma.a
 
 libgma_a_SOURCES = gma.cu
