@@ -1,7 +1,7 @@
 CLEANFILES = *~
 DISTCLEANFILES = *~
 
-AM_CPPFLAGS = -G
+AM_CPPFLAGS = -Xptxas -O0
 
 noinst_LIBRARIES = libloopcalc.a
 

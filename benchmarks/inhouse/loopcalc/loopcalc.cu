@@ -6,7 +6,7 @@
 
 /* NOTE: nvcc over 9.0 has a problem of compilation freeze.
  * This seems to relate to ptx optimization.
- * nvcc with -G disables all optimizations. loopcalc Makefile.am has this option.
+ * nvcc with -Xptxas -O0 disables all optimizations. loopcalc Makefile.am has this option.
  */
 
 __device__ static int
@@ -175,7 +175,7 @@ loopcalc(void *args[])
 __global__ static void
 kernel_loopcalc(void *args[])
 {
-	loopcalc(args);
+	args[4] = (void *)(long long)loopcalc(args);
 }
 
 int
