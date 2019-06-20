@@ -1,7 +1,7 @@
 CLEANFILES = *~
 DISTCLEANFILES = *~
 
-AM_CPPFLAGS = -G
+AM_CPPFLAGS =
 
 noinst_LIBRARIES = libgma.a
 

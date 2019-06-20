@@ -9,14 +9,17 @@ gma(void *args[])
 	int	stride = (int)(long long)args[1];
 	int	n_iters = (int)(long long)args[2];
 	unsigned char	*gmem = (unsigned char *)args[3];
+	unsigned	memidx_max = gmemsize * 1024;
 	unsigned	memidx;
 	int	value = 0;
 	int	i, j;
 
-	memidx = clock() * 19239913 * threadIdx.x;
+	memidx = (unsigned)(clock() * 19239913 * threadIdx.x) % memidx_max;
 	for (i = 0; i < n_iters; i++) {
 		for (j = 0; j < 10000; j ++, memidx += stride) {
-			value += gmem[memidx % (gmemsize * 1024)];
+			if (memidx >= memidx_max)
+				memidx -= memidx_max;
+			value += (gmem[memidx] + gmem[memidx + stride / 2] + gmem[memidx + stride / 4]);
 		}
 	}
 	return value;
@@ -25,7 +28,7 @@ gma(void *args[])
 __global__ static void
 kernel_gma(void *args[])
 {
-	gma(args);
+	args[4] = (void *)(long long)gma(args);
 }
 
 int
