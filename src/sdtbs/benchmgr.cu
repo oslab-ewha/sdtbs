@@ -1,11 +1,13 @@
 #include "sdtbs_cu.h"
 
-int bench_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[]);
-int bench_gma(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[]);
+int bench_loopcalc(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[], int *pres);
+int bench_gma(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[], int *pres);
 int cookarg_gma(void *args[]);
 
 benchrun_t	benchruns[MAX_BENCHES];
 int	n_benches;
+int	n_tbs_submitted;
+int	n_mtbs_submitted;
 
 static benchinfo_t	benchinfos[] = {
 	{ "lc", 1, NULL, bench_loopcalc },
@@ -81,6 +83,7 @@ add_bench(const char *code, const char *args)
 {
 	benchrun_t	*brun = benchruns + n_benches;
 	benchinfo_t	*info;
+	int	n_tbs;
 
 	info = find_benchinfo(code);
 	if (info == NULL)
@@ -95,6 +98,9 @@ add_bench(const char *code, const char *args)
 		}
 	}
 	n_benches++;
+	n_tbs = brun->n_grid_width * brun->n_grid_height;
+	n_tbs_submitted += n_tbs;
+	n_mtbs_submitted += (n_tbs * (brun->n_tb_width * brun->n_tb_height / N_THREADS_PER_mTB));
+
 	return TRUE;
 }
-

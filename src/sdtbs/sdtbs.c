@@ -6,6 +6,7 @@ usage(void)
 	printf(
 "sdtbs <options> <benchmark spec>...\n"
 "<options>:\n"
+"  -s: use static schedule\n"
 "  -d <device no>: select GPU device\n"
 "  -p <policy>: scheduling policy\n"
 "     supported policies: rr(round-robin, default)\n"
@@ -17,7 +18,7 @@ usage(void)
 "  lc: repetitive calculation(in-house)\n"
 "  gma: global memory access(in-house)\n"
 " <arg string>:\n"
-"   NOTE: First 4 arguments are <grid width>,<grid height>,<tb width>,<tb heigh>\n"
+"   NOTE: First 4 arguments are <grid width>,<grid height>,<tb width>,<tb height>\n"
 "   lc: <calculation type>,<iterations>,<# iterations for calculation type greater than 3>\n"
 "        calculation type: 1(int),2(float),3(double),default:empty\n"
 "                          4(float/double),5(int/float),6(int/double)\n"
@@ -27,6 +28,7 @@ usage(void)
 }
 
 BOOL	direct_mode;
+BOOL	use_static_sched;
 
 unsigned	devno;
 
@@ -72,8 +74,11 @@ parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "d:p:xh")) != -1) {
+	while ((c = getopt(argc, argv, "sd:p:xh")) != -1) {
 		switch (c) {
+		case 's':
+			use_static_sched = TRUE;
+			break;
 		case 'd':
 			select_device(optarg);
 			break;

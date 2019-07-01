@@ -6,7 +6,7 @@ report(unsigned elapsed)
 	benchrun_t	*brun;
 	int	i;
 
-	printf("tbs type: %s\n", direct_mode ? "native": "SW defined");
+	printf("tbs type: %s\n", direct_mode ? "native": use_static_sched ? "sd(static)": "sd(dynamic)");
 	if (!direct_mode) {
 		printf("sm count: %u\n", n_sm_count);
 		printf("n threads per MTB: %u\n", n_threads_per_MTB);

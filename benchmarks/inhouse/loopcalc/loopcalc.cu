@@ -173,20 +173,20 @@ loopcalc(void *args[])
 }
 
 __global__ static void
-kernel_loopcalc(void *args[])
+kernel_loopcalc(void *args[], int *pres)
 {
-	args[4] = (void *)(long long)loopcalc(args);
+	*pres = loopcalc(args);
 }
 
 int
-bench_loopcalc(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width, int n_tb_height, void *args[])
+bench_loopcalc(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width, int n_tb_height, void *args[], int *pres)
 {
 	cudaError_t	err;
 
 	dim3 dimGrid(n_grid_width, n_grid_height);
 	dim3 dimBlock(n_tb_width, n_tb_height);
 
-	kernel_loopcalc<<<dimGrid, dimBlock, 0, strm>>>(args);
+	kernel_loopcalc<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {

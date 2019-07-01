@@ -7,6 +7,14 @@ unsigned	n_threads_per_MTB;	/* per macro TB */
 
 static struct timespec  started_ts;
 
+__device__ uint
+get_smid(void)
+{
+	uint	ret;
+	asm("mov.u32 %0, %smid;" : "=r"(ret));
+	return ret;
+}
+
 extern "C" BOOL
 select_gpu_device(unsigned devno)
 {

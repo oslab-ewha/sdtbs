@@ -8,6 +8,7 @@ static sched_t	*all_sched[] = {
 };
 
 sched_t	*sched = &sched_rr;
+unsigned	sched_id = 1;
 
 unsigned n_grid_width, n_grid_height;
 unsigned n_tb_width, n_tb_height;
@@ -20,6 +21,7 @@ setup_sched(const char *strpol)
 	for (i = 0; all_sched[i]; i++) {
 		if (strcmp(strpol, all_sched[i]->name) == 0) {
 			sched = all_sched[i];
+			sched_id = i + 1;
 			return;
 		}
 	}
@@ -28,31 +30,29 @@ setup_sched(const char *strpol)
 }
 
 static void
-sched_micro_tb(benchrun_t *brun, unsigned id_sm)
+sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned brid, unsigned id_sm)
 {
 	int	i;
 
 	ASSERT(brun->n_tb_width % N_THREADS_PER_mTB == 0);
 
 	for (i = 0; i < brun->n_tb_width * brun->n_tb_height; i += N_THREADS_PER_mTB) {
-		micro_tb_t	*mtb;
-
-		mtb = get_mtb(id_sm);
-		if (mtb == NULL) {
+		if (!assign_brid(fkinfo, id_sm, brid)) {
 			FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
 		}
-		if (i == 0) {
-			brun->mtb_first = mtb;
-		}
-		mtb->skid = brun->info->skid;
-		memcpy(mtb->args, brun->args, sizeof(void *) * MAX_ARGS);
 	}
 }
 
 static void
-sched_brun(benchrun_t *brun)
+sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned brid)
 {
+	benchrun_k_t	*brk;
 	int	i, j;
+
+	brk = &fkinfo->bruns[brid - 1];
+	brk->skid = brun->info->skid;
+	memcpy(brk->args, brun->args, sizeof(void *) * MAX_ARGS);
+	brk->n_mtbs_per_tb = brun->n_tb_width * brun->n_tb_height / N_THREADS_PER_mTB;
 
 	n_grid_width = brun->n_grid_width;
 	n_grid_height = brun->n_grid_height;
@@ -61,32 +61,25 @@ sched_brun(benchrun_t *brun)
 
 	for (i = 0; i < brun->n_grid_height; i++) {
 		for (j = 0; j < brun->n_grid_width; j++) {
-			unsigned	id_sm = sched->get_tb_sm(j, i);
-			sched_micro_tb(brun, id_sm);
+			if (use_static_sched) {
+				unsigned	id_sm = sched->get_tb_sm(j, i);
+				sched_micro_tb(fkinfo, brun, brid, id_sm);
+			}
+			else {
+				assign_brid(fkinfo, 0, brid);
+			}
 		}
 	}
 }
 
 void
-run_schedule(void)
+run_schedule(fedkern_info_t *fkinfo)
 {
 	benchrun_t	*brun;
 	int	i;
 
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
-		sched_brun(brun);
-	}
-}
-
-void
-collect_mtb_result(void)
-{
-	benchrun_t	*brun;
-	int	i;
-
-	brun = benchruns;
-	for (i = 0; i < n_benches; i++, brun++) {
-		brun->res = (int)(long long)brun->mtb_first->args[0];
+		sched_brun(fkinfo, brun, i + 1);
 	}
 }
