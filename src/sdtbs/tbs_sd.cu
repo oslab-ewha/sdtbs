@@ -24,13 +24,10 @@ kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
 {
 	benchrun_k_t	*brk;
 	unsigned	brid;
-	int	n_mtbs_per_width;
 	int	idx;
 	int	res;
 
-	n_mtbs_per_width = blockDim.x / N_THREADS_PER_mTB;
-
-	idx = get_smid() * fkinfo->n_max_mtbs_per_sm + n_mtbs_per_width * threadIdx.y + threadIdx.x / N_THREADS_PER_mTB;
+	idx = get_smid() * fkinfo->n_max_mtbs_per_sm + fkinfo->n_max_mtbs_per_MTB * blockIdx.y + threadIdx.x / N_THREADS_PER_mTB;
 
 	brid = fkinfo->brids[idx];
 	if (brid == 0)
@@ -83,7 +80,7 @@ launch_macro_TB(fedkern_info_t *fkinfo)
 {
 	cudaError_t	err;
 
-	dim3 dimGrid(n_sm_count, 1);
+	dim3 dimGrid(n_sm_count, n_MTBs_per_sm);
 	dim3 dimBlock(n_threads_per_MTB, 1);
 
 	kernel_macro_TB<<<dimGrid, dimBlock, 0>>>(fkinfo);

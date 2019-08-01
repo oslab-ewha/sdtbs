@@ -1,7 +1,7 @@
 #include "sdtbs_cu.h"
 
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
-#define mTB_INDEX(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + (threadIdx.x / N_THREADS_PER_mTB) + 1)
+#define mTB_INDEX(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
 #define EPOCH(id_sm)		mtb_epochs[mTB_INDEX(id_sm) - 1]
 #define mTB_ALLOC_TABLE(id_sm)	(mATs + mTB_TOTAL_COUNT() * (EPOCH(id_sm) / N_THREADS_PER_mTB))
 #define BRK_INDEX(id_sm, idx)	mTB_ALLOC_TABLE(id_sm)[(id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx - 1]

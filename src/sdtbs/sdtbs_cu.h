@@ -9,6 +9,7 @@
 
 extern unsigned n_sm_count;
 extern unsigned n_threads_per_MTB;
+extern unsigned	n_MTBs_per_sm;
 extern int	n_benches;
 extern int	n_tbs_submitted;
 extern int	n_mtbs_submitted;
@@ -30,6 +31,7 @@ typedef struct {
 	unsigned	sched_id;
 	unsigned	n_sm_count;
 	unsigned	n_max_mtbs_per_sm;
+	unsigned	n_max_mtbs_per_MTB;
 	unsigned	n_mtbs;
 	unsigned	n_tbs;
 	unsigned	brids[0];

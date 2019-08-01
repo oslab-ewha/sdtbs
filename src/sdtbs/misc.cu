@@ -4,6 +4,7 @@
 
 unsigned	n_sm_count;
 unsigned	n_threads_per_MTB;	/* per macro TB */
+unsigned	n_MTBs_per_sm;
 
 static struct timespec  started_ts;
 
@@ -53,6 +54,7 @@ setup_gpu_devinfo(void)
 
 	n_sm_count = prop.multiProcessorCount;
 	n_threads_per_MTB = prop.maxThreadsPerBlock;
+	n_MTBs_per_sm = prop.maxThreadsPerMultiProcessor / n_threads_per_MTB;
 
 	return TRUE;
 }

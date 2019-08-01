@@ -12,7 +12,7 @@ setup_fedkern_info(void)
 	unsigned	size_fkinfo;
 	unsigned	n_max_mtbs;
 
-	n_max_mtbs_per_sm = n_threads_per_MTB / N_THREADS_PER_mTB;
+	n_max_mtbs_per_sm = n_threads_per_MTB / N_THREADS_PER_mTB * n_MTBs_per_sm;
 	n_max_mtbs = n_sm_count * n_max_mtbs_per_sm;
 
 	if (use_static_sched)
@@ -27,6 +27,7 @@ setup_fedkern_info(void)
 	fkinfo->sched_id = use_static_sched ? 0: sched_id;
 	fkinfo->n_mtbs = n_mtbs_submitted;
 	fkinfo->n_max_mtbs_per_sm = n_max_mtbs_per_sm;
+	fkinfo->n_max_mtbs_per_MTB = n_max_mtbs_per_sm / n_MTBs_per_sm;
 	fkinfo->n_tbs = n_tbs_submitted;
 
 	return fkinfo;

@@ -10,6 +10,7 @@ report(unsigned elapsed)
 	if (!direct_mode) {
 		printf("sm count: %u\n", n_sm_count);
 		printf("n threads per MTB: %u\n", n_threads_per_MTB);
+		printf("n MTBs per SM: %u\n", n_MTBs_per_sm);
 	}
 	printf("elapsed time: %.3lf\n", elapsed / 1000.0);
 	brun = benchruns;
