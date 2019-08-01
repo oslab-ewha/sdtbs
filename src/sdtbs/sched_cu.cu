@@ -22,6 +22,7 @@ __device__ static unsigned	*mtb_epochs;
 __device__ static unsigned	n_tbs_assignable;
 
 __device__ unsigned cu_get_tb_sm_rr(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
+__device__ unsigned cu_get_tb_sm_rrf(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 
 static __device__ int
 lock_scheduling(void)
@@ -62,6 +63,9 @@ run_schedule_in_kernel(void)
 	switch (d_fkinfo->sched_id) {
 	case 1:
 		id_sm_sched = cu_get_tb_sm_rr(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
+		break;
+	case 2:
+		id_sm_sched = cu_get_tb_sm_rrf(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
 	default:
 		break;

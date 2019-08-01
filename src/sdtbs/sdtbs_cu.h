@@ -61,6 +61,8 @@ extern unsigned n_grid_width, n_grid_height;
 extern unsigned n_tb_width, n_tb_height;
 
 __device__ uint get_smid(void);
+__device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
+
 BOOL setup_gpu_devinfo(void);
 fedkern_info_t *setup_fedkern_info(void);
 
