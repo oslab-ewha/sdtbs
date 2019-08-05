@@ -1,11 +1,15 @@
 #include "sdtbs_cu.h"
 
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
-#define mTB_INDEX(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
-#define EPOCH(id_sm)		mtb_epochs[mTB_INDEX(id_sm) - 1]
-#define mTB_ALLOC_TABLE(id_sm)	(mATs + mTB_TOTAL_COUNT() * (EPOCH(id_sm) / N_THREADS_PER_mTB))
-#define BRK_INDEX(id_sm, idx)	mTB_ALLOC_TABLE(id_sm)[(id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx - 1]
-#define BRK_INDEX_MY(id_sm)	mTB_ALLOC_TABLE(id_sm)[mTB_INDEX(id_sm) - 1]
+#define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
+#define mTB_INDEX_MY(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
+#define EPOCH(id_sm, idx)	mtb_epochs[mTB_INDEX(id_sm, idx) - 1]
+#define EPOCH_MY(id_sm)		mtb_epochs[mTB_INDEX_MY(id_sm) - 1]
+
+#define mTB_ALLOC_TABLE(id_sm, idx)	(mATs + mTB_TOTAL_COUNT() * EPOCH(id_sm, idx))
+#define mTB_ALLOC_TABLE_MY(id_sm)	(mATs + mTB_TOTAL_COUNT() * EPOCH_MY(id_sm))
+#define BRK_INDEX(id_sm, idx)	mTB_ALLOC_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
+#define BRK_INDEX_MY(id_sm)	mTB_ALLOC_TABLE_MY(id_sm)[mTB_INDEX_MY(id_sm) - 1]
 
 #define IS_LEADER_THREAD()	(threadIdx.x % N_THREADS_PER_mTB == 0)
 
@@ -17,9 +21,9 @@ __device__ static fedkern_info_t	*d_fkinfo;
 
 /* epoch directory for mTB allocation table */
 __device__ static volatile unsigned	*mATs;
-__device__ static unsigned	*mtb_epochs;
+__device__ static volatile unsigned	*mtb_epochs;
 
-__device__ static unsigned	n_tbs_assignable;
+__device__ static volatile unsigned	n_tbs_assignable;
 
 __device__ unsigned cu_get_tb_sm_rr(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 __device__ unsigned cu_get_tb_sm_rrf(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
@@ -77,7 +81,7 @@ run_schedule_in_kernel(void)
 		for (i = 0; i < brk->n_mtbs_per_tb; i++) {
 			BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
 		}
-		atomicInc(&n_tbs_assignable, 1000000000);
+		n_tbs_assignable++;
 	}
 
 	unlock_scheduling();
@@ -118,11 +122,10 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 
 		brid = BRK_INDEX_MY(id_sm);
 		if (brid != 0) {
-			if (IS_LEADER_THREAD() && d_fkinfo->bruns[brid - 1].primary_mtb_idx == mTB_INDEX(id_sm))
+			if (IS_LEADER_THREAD() && d_fkinfo->bruns[brid - 1].primary_mtb_idx == mTB_INDEX_MY(id_sm))
 				*pis_primary_mtb = TRUE;
 			else
 				*pis_primary_mtb = FALSE;
-			atomicInc(&EPOCH(id_sm), 100000000);
 			return brid;
 		}
 
@@ -136,6 +139,17 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 	}
 
 	return 0;
+}
+
+__device__ void
+advance_epoch(void)
+{
+	unsigned	id_sm = get_smid() + 1;
+
+	if (IS_LEADER_THREAD())
+		EPOCH_MY(id_sm)++;
+
+	__syncwarp();
 }
 
 __device__ void
@@ -160,7 +174,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 		mATs[i] = 0;
 	}
 
-	mtb_epochs = (unsigned *)malloc(mTB_TOTAL_COUNT() * sizeof(unsigned));
+	mtb_epochs = (volatile unsigned *)malloc(mTB_TOTAL_COUNT() * sizeof(unsigned));
 	for (i = 0; i < mTB_TOTAL_COUNT(); i++) {
 		mtb_epochs[i] = 0;
 	}

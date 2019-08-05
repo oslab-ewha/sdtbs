@@ -2,6 +2,7 @@
 
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ unsigned get_brid_dyn(BOOL *pis_primary_mtb);
+extern __device__ void advance_epoch(void);
 
 __device__ int loopcalc(void *args[]);
 __device__ int gma(void *args[]);
@@ -60,6 +61,7 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 			return;
 		brk = &fkinfo->bruns[brid - 1];
 		res = run_bench(brk->skid, brk->args);
+		advance_epoch();
 
 		if (is_primary_mtb)
 			brk->res = res;
