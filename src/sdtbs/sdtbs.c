@@ -12,6 +12,8 @@ usage(void)
 "     supported policies: rr(round-robin, default)\n"
 "                         rrf(round-robin fully)\n"
 "  -x: run direct mode\n"
+"  -M <MTB count per sm>\n"
+"  -T <thread count per MTB>\n"
 "  -h: help\n"
 "<benchmark spec>: <code>:<arg string>\n"
 " <code>:\n"
@@ -31,6 +33,8 @@ BOOL	direct_mode;
 BOOL	use_static_sched;
 
 unsigned	devno;
+unsigned	arg_n_MTBs_per_sm;
+unsigned	arg_n_threads_per_MTB;
 
 static int
 parse_benchargs(int argc, char *argv[])
@@ -69,12 +73,28 @@ select_device(const char *str_devno)
 	}
 }
 
+static void
+setup_n_MTBs(const char *str_n_MTBs)
+{
+	if (sscanf(str_n_MTBs, "%u", &arg_n_MTBs_per_sm) != 1 || arg_n_MTBs_per_sm == 0) {
+		error("%s: invalid number of MTBs per SM", str_n_MTBs);
+	}
+}
+
+static void
+setup_n_threads(const char *str_n_threads)
+{
+	if (sscanf(str_n_threads, "%u", &arg_n_threads_per_MTB) != 1 || arg_n_threads_per_MTB == 0) {
+		error("%s: invalid number of threads per MTB", str_n_threads);
+	}
+}
+
 static int
 parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "sd:p:xh")) != -1) {
+	while ((c = getopt(argc, argv, "sd:p:xM:T:h")) != -1) {
 		switch (c) {
 		case 's':
 			use_static_sched = TRUE;
@@ -87,6 +107,12 @@ parse_options(int argc, char *argv[])
 			break;
 		case 'x':
 			direct_mode = TRUE;
+			break;
+		case 'M':
+			setup_n_MTBs(optarg);
+			break;
+		case 'T':
+			setup_n_threads(optarg);
 			break;
 		case 'h':
 			usage();

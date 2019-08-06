@@ -6,6 +6,9 @@ unsigned	n_sm_count;
 unsigned	n_threads_per_MTB;	/* per macro TB */
 unsigned	n_MTBs_per_sm;
 
+extern "C" unsigned	arg_n_MTBs_per_sm;
+extern "C" unsigned	arg_n_threads_per_MTB;
+
 static struct timespec  started_ts;
 
 __device__ uint
@@ -53,8 +56,32 @@ setup_gpu_devinfo(void)
 	}
 
 	n_sm_count = prop.multiProcessorCount;
-	n_threads_per_MTB = prop.maxThreadsPerBlock;
-	n_MTBs_per_sm = prop.maxThreadsPerMultiProcessor / n_threads_per_MTB;
+	if (arg_n_MTBs_per_sm == 0 && arg_n_threads_per_MTB == 0) {
+		n_threads_per_MTB = prop.maxThreadsPerBlock;
+		n_MTBs_per_sm = prop.maxThreadsPerMultiProcessor / n_threads_per_MTB;
+	}
+	else if (arg_n_MTBs_per_sm > 0) {
+		n_MTBs_per_sm = arg_n_MTBs_per_sm;
+		if (arg_n_threads_per_MTB > 0)
+			n_threads_per_MTB = arg_n_threads_per_MTB;
+		else
+			n_threads_per_MTB = prop.maxThreadsPerMultiProcessor / n_MTBs_per_sm;
+	}
+	else {
+		n_threads_per_MTB = arg_n_threads_per_MTB;
+		n_MTBs_per_sm = prop.maxThreadsPerMultiProcessor / n_threads_per_MTB;
+	}
+
+	if (n_threads_per_MTB > prop.maxThreadsPerBlock)
+		n_threads_per_MTB = prop.maxThreadsPerBlock;
+	if (n_threads_per_MTB < 32) {
+		error("Too small threads per MTB: %d", n_threads_per_MTB);
+		return FALSE;
+	}
+	if (n_threads_per_MTB % 32) {
+		error("Invalid thread count per MTB: %d", n_threads_per_MTB);
+		return FALSE;
+	}
 
 	return TRUE;
 }
