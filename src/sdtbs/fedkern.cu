@@ -34,7 +34,7 @@ setup_fedkern_info(void)
 }
 
 BOOL
-assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned brid)
+assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
 {
 	if (use_static_sched) {
 		unsigned	idx;

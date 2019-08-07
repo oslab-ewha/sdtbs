@@ -30,7 +30,7 @@ setup_sched(const char *strpol)
 }
 
 static void
-sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned brid, unsigned id_sm)
+sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, unsigned id_sm)
 {
 	int	i;
 
@@ -44,7 +44,7 @@ sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned brid, unsigned
 }
 
 static void
-sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned brid)
+sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 {
 	benchrun_k_t	*brk;
 	int	i, j;

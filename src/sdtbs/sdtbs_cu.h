@@ -34,7 +34,7 @@ typedef struct {
 	unsigned	n_max_mtbs_per_MTB;
 	unsigned	n_mtbs;
 	unsigned	n_tbs;
-	unsigned	brids[0];
+	unsigned char	brids[0];
 } fedkern_info_t;
 
 typedef struct {
@@ -68,7 +68,7 @@ __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsig
 BOOL setup_gpu_devinfo(void);
 fedkern_info_t *setup_fedkern_info(void);
 
-BOOL assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned brid);
+BOOL assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid);
 BOOL is_sm_avail(int id_sm, unsigned n_threads);
 
 void run_schedule(fedkern_info_t *kfinfo);

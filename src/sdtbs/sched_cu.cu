@@ -15,12 +15,14 @@
 
 #define IS_SCHEDULE_DONE()	(n_tbs_assignable == d_fkinfo->n_tbs)
 
+extern __device__ BOOL	going_to_shutdown;
+
 __device__ static volatile int	initialized;
 __device__ static volatile int	in_scheduling;
 __device__ static fedkern_info_t	*d_fkinfo;
 
 /* epoch directory for mTB allocation table */
-__device__ static volatile unsigned	*mATs;
+__device__ static volatile unsigned char	*mATs;
 __device__ static volatile unsigned	*mtb_epochs;
 
 __device__ static volatile unsigned	n_tbs_assignable;
@@ -50,7 +52,7 @@ run_schedule_in_kernel(void)
 	benchrun_k_t	*brk;
 	unsigned	id_sm_sched;
 	unsigned	idx_mtb_start;
-	unsigned	brid;
+	unsigned char	brid;
 	int	i;
 
 	if (lock_scheduling() < 0)
@@ -110,7 +112,7 @@ find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs)
 	return 0;
 }
 
-__device__ unsigned
+__device__ unsigned char
 get_brid_dyn(BOOL *pis_primary_mtb)
 {
 	unsigned	id_sm;
@@ -118,7 +120,7 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 	id_sm = get_smid() + 1;
 
 	for (;;) {
-		unsigned	brid;
+		unsigned char	brid;
 
 		brid = BRK_INDEX_MY(id_sm);
 		if (brid != 0) {
@@ -169,15 +171,25 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	d_fkinfo = _fkinfo;
 
 	mATs_size = d_fkinfo->n_tbs * mTB_TOTAL_COUNT();
-	mATs = (volatile unsigned *)malloc(mATs_size * sizeof(unsigned));
+	mATs = (volatile unsigned char *)malloc(mATs_size);
+	if (mATs == NULL) {
+		printf("too big mAT: %d\n", mATs_size);
+		going_to_shutdown = TRUE;
+		goto out;
+	}
 	for (i = 0; i < mATs_size; i++) {
 		mATs[i] = 0;
 	}
 
 	mtb_epochs = (volatile unsigned *)malloc(mTB_TOTAL_COUNT() * sizeof(unsigned));
+	if (mtb_epochs == NULL) {
+		printf("out of memory: epochs cannot be allocated\n");
+		going_to_shutdown = TRUE;
+		goto out;
+	}
 	for (i = 0; i < mTB_TOTAL_COUNT(); i++) {
 		mtb_epochs[i] = 0;
 	}
-
+out:
 	initialized = 1;
 }

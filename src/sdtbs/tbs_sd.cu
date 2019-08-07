@@ -1,8 +1,10 @@
 #include "sdtbs_cu.h"
 
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
-extern __device__ unsigned get_brid_dyn(BOOL *pis_primary_mtb);
+extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch(void);
+
+__device__ BOOL	going_to_shutdown;
 
 __device__ int loopcalc(void *args[]);
 __device__ int gma(void *args[]);
@@ -24,7 +26,7 @@ static __device__ void
 kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
 {
 	benchrun_k_t	*brk;
-	unsigned	brid;
+	unsigned char	brid;
 	int	idx;
 	int	res;
 
@@ -50,9 +52,9 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 	}
 	__syncthreads();
 
-	while (TRUE) {
+	while (!going_to_shutdown) {
 		benchrun_k_t	*brk;
-		unsigned	brid;
+		unsigned char	brid;
 		int	res;
 		BOOL	is_primary_mtb;
 
