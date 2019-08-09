@@ -46,6 +46,8 @@ function run_sdtbs() {
     get_elapsed_time -p rr $*
     echo -n ' '
     get_elapsed_time -p rrf $*
+    echo -n ' '
+    get_elapsed_time -p fca $*
     echo
 }
 
@@ -55,16 +57,18 @@ function run_sdtbs_tbs_threads() {
 	tbs=$(($m * $n_sms))
 	for ths in 32 64 128 256 512 1024
 	do
+	    cmd_args=
 	    for arg in $*
 	    do
 		bench=`echo $arg | cut -d':' -f1`
 		bencharg=`echo $arg | cut -d':' -f2`
-		run_sdtbs $bench:$tbs,1,$ths,1,$bencharg
+		cmd_args="$cmd_args $bench:$tbs,1,$ths,1,$bencharg"
 	    done
+	    run_sdtbs $cmd_args
 	done
     done
 }
 
-echo "#direct static(rr) static(rrf) dynamic(rr) dynamic(rrf)"
+echo "#direct static(rr) static(rrf) dynamic(rr) rrf fca"
 
 run_sdtbs_tbs_threads $*

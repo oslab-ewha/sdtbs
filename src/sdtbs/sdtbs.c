@@ -11,6 +11,7 @@ usage(void)
 "  -p <policy>: scheduling policy\n"
 "     supported policies: rr(round-robin, default)\n"
 "                         rrf(round-robin fully)\n"
+"                         fca(first come allocation)\n"
 "  -x: run direct mode\n"
 "  -M <MTB count per sm>\n"
 "  -T <thread count per MTB>\n"

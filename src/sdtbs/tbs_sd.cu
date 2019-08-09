@@ -125,7 +125,8 @@ run_sd_tbs(unsigned *pticks)
 
 	cudaMalloc(&d_fkinfo, fkinfo->size);
 
-	run_schedule(fkinfo);
+	if (!run_schedule(fkinfo))
+		return FALSE;
 
 	cudaMemcpy(d_fkinfo, fkinfo, fkinfo->size, cudaMemcpyHostToDevice);
 

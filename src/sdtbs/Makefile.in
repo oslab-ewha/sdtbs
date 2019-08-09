@@ -103,8 +103,9 @@ PROGRAMS = $(bin_PROGRAMS)
 am_sdtbs_OBJECTS = sdtbs.$(OBJEXT) tbs_sd.$(OBJEXT) \
 	tbs_native.$(OBJEXT) benchmgr.$(OBJEXT) fedkern.$(OBJEXT) \
 	report.$(OBJEXT) misc.$(OBJEXT) sched.$(OBJEXT) \
-	sched_rr.$(OBJEXT) sched_rrf.$(OBJEXT) sched_cu.$(OBJEXT) \
-	sched_cu_rr.$(OBJEXT) sched_cu_rrf.$(OBJEXT)
+	sched_rr.$(OBJEXT) sched_rrf.$(OBJEXT) sched_fca.$(OBJEXT) \
+	sched_cu.$(OBJEXT) sched_cu_rr.$(OBJEXT) \
+	sched_cu_rrf.$(OBJEXT) sched_cu_fca.$(OBJEXT)
 sdtbs_OBJECTS = $(am_sdtbs_OBJECTS)
 sdtbs_DEPENDENCIES = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 	../../benchmarks/inhouse/gma/libgma.a
@@ -267,8 +268,8 @@ CLEANFILES = *~
 DISTCLEANFILES = *~
 LINK = @NVCC_PATH@ @CUDA_GENCODE@ -o $@
 sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu fedkern.cu report.cu misc.cu sdtbs.h sdtbs_cu.h \
-	sched.cu sched_rr.cu sched_rrf.cu \
-	sched_cu.cu sched_cu_rr.cu sched_cu_rrf.cu
+	sched.cu sched_rr.cu sched_rrf.cu sched_fca.cu \
+	sched_cu.cu sched_cu_rr.cu sched_cu_rrf.cu sched_cu_fca.cu
 
 sdtbs_LDADD = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 		../../benchmarks/inhouse/gma/libgma.a

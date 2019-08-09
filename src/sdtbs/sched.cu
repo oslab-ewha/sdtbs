@@ -2,9 +2,10 @@
 
 extern sched_t	sched_rr;
 extern sched_t	sched_rrf;
+extern sched_t	sched_fca;
 
 static sched_t	*all_sched[] = {
-	&sched_rr, &sched_rrf, NULL
+	&sched_rr, &sched_rrf, &sched_fca, NULL
 };
 
 sched_t	*sched = &sched_rr;
@@ -72,14 +73,21 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 	}
 }
 
-void
+BOOL
 run_schedule(fedkern_info_t *fkinfo)
 {
 	benchrun_t	*brun;
 	int	i;
 
+	if (sched->get_tb_sm == NULL && use_static_sched) {
+		error("static scheduling not supported");
+		return FALSE;
+	}
+
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
 		sched_brun(fkinfo, brun, i + 1);
 	}
+
+	return TRUE;
 }

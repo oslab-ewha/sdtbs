@@ -71,7 +71,7 @@ fedkern_info_t *setup_fedkern_info(void);
 BOOL assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid);
 BOOL is_sm_avail(int id_sm, unsigned n_threads);
 
-void run_schedule(fedkern_info_t *kfinfo);
+BOOL run_schedule(fedkern_info_t *kfinfo);
 
 void init_tickcount(void);
 unsigned long long get_tickcount(void);
