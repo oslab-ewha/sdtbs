@@ -15,7 +15,7 @@ extern int	n_tbs_submitted;
 extern int	n_mtbs_submitted;
 
 typedef int (*cookarg_func_t)(void *args[]);
-typedef int (*bench_func_t)(cudaStream_t strm, int n_tbs_x, int n_tbs_y, int n_threads_x, int n_threads_y, void *args[], int *pres);
+typedef void (*bench_func_t)(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres);
 
 typedef struct {
 	unsigned	skid;
@@ -42,6 +42,7 @@ typedef struct {
 	int	skid;
 	cookarg_func_t	cookarg_func;
 	bench_func_t	bench_func;
+	bench_func_t	bench_func_noreloc;
 } benchinfo_t;
 
 typedef struct {

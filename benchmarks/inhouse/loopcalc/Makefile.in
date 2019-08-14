@@ -106,7 +106,7 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libloopcalc_a_AR = $(AR) $(ARFLAGS)
 libloopcalc_a_LIBADD =
-am_libloopcalc_a_OBJECTS = loopcalc.$(OBJEXT)
+am_libloopcalc_a_OBJECTS = loopcalc.$(OBJEXT) loopcalc_reloc.$(OBJEXT)
 libloopcalc_a_OBJECTS = $(am_libloopcalc_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -252,7 +252,7 @@ CLEANFILES = *~
 DISTCLEANFILES = *~
 AM_CPPFLAGS = -Xptxas -O0
 noinst_LIBRARIES = libloopcalc.a
-libloopcalc_a_SOURCES = loopcalc.cu
+libloopcalc_a_SOURCES = loopcalc.cu loopcalc_reloc.cu
 all: all-am
 
 .SUFFIXES:

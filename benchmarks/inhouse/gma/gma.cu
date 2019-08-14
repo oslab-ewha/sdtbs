@@ -25,12 +25,6 @@ gma(void *args[])
 	return value;
 }
 
-__global__ static void
-kernel_gma(void *args[], int *pres)
-{
-	*pres = gma(args);
-}
-
 int
 cookarg_gma(void *args[])
 {
@@ -55,21 +49,14 @@ cookarg_gma(void *args[])
 	return 0;
 }
 
-int
-bench_gma(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width, int n_tb_height, void *args[], int *pres)
+__global__ static void
+kernel_gma(void *args[], int *pres)
 {
-	cudaError_t	err;
+	*pres = gma(args);
+}
 
-	dim3 dimGrid(n_grid_width, n_grid_height);
-	dim3 dimBlock(n_tb_width, n_tb_height);
-
+void
+bench_gma(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
+{
 	kernel_gma<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
-
-	err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		printf("error: %s\n", cudaGetErrorString(err));
-		return -1;
-	}
-
-	return 0;
 }

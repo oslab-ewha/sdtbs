@@ -178,21 +178,8 @@ kernel_loopcalc(void *args[], int *pres)
 	*pres = loopcalc(args);
 }
 
-int
-bench_loopcalc(cudaStream_t strm, int n_grid_width, int n_grid_height, int n_tb_width, int n_tb_height, void *args[], int *pres)
+void
+bench_loopcalc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
 {
-	cudaError_t	err;
-
-	dim3 dimGrid(n_grid_width, n_grid_height);
-	dim3 dimBlock(n_tb_width, n_tb_height);
-
 	kernel_loopcalc<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
-
-	err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		printf("error: %s\n", cudaGetErrorString(err));
-		return -1;
-	}
-
-	return 0;
 }

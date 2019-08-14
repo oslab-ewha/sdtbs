@@ -12,7 +12,8 @@ usage(void)
 "     supported policies: rr(round-robin, default)\n"
 "                         rrf(round-robin fully)\n"
 "                         fca(first come allocation)\n"
-"  -x: run direct mode\n"
+"  -x: run direct mode(with relocatable code)\n"
+"  -X: run direct mode\n"
 "  -M <MTB count per sm>\n"
 "  -T <thread count per MTB>\n"
 "  -h: help\n"
@@ -31,6 +32,7 @@ usage(void)
 }
 
 BOOL	direct_mode;
+BOOL	use_relocatable = TRUE;
 BOOL	use_static_sched;
 
 unsigned	devno;
@@ -95,7 +97,7 @@ parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "sd:p:xM:T:h")) != -1) {
+	while ((c = getopt(argc, argv, "sd:p:xXM:T:h")) != -1) {
 		switch (c) {
 		case 's':
 			use_static_sched = TRUE;
@@ -106,6 +108,8 @@ parse_options(int argc, char *argv[])
 		case 'p':
 			setup_sched(optarg);
 			break;
+		case 'X':
+			use_relocatable = FALSE;
 		case 'x':
 			direct_mode = TRUE;
 			break;

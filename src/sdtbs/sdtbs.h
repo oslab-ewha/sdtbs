@@ -24,6 +24,7 @@ extern "C" {
 #define FATAL(exitcode, fmt, ...)       do { error(fmt, ## __VA_ARGS__); exit(exitcode); } while (0)
 
 extern BOOL	direct_mode;
+extern BOOL	use_relocatable;
 extern BOOL	use_static_sched;
 extern unsigned	sched_id;
 extern unsigned	devno;
