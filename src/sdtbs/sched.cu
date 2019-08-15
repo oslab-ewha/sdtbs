@@ -50,11 +50,11 @@ assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
 	if (use_static_sched) {
 		unsigned	idx;
 
-		if (n_cur_mtbs_per_sm[id_sm] == n_max_mtbs_per_sm)
+		if (n_cur_mtbs_per_sm[id_sm - 1] == n_max_mtbs_per_sm)
 			return FALSE;
-		idx = id_sm * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm];
+		idx = (id_sm - 1) * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm - 1];
 		fkinfo->brids[idx] = brid;
-		n_cur_mtbs_per_sm[id_sm]++;
+		n_cur_mtbs_per_sm[id_sm - 1]++;
 		if (fkinfo->bruns[brid - 1].primary_mtb_idx == 0)
 			fkinfo->bruns[brid - 1].primary_mtb_idx = n_cur_mtbs + 1;
 	}
@@ -100,6 +100,9 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 		for (j = 0; j < brun->n_grid_width; j++) {
 			if (use_static_sched) {
 				unsigned	id_sm = sched->get_tb_sm(j, i);
+				if (id_sm == 0) {
+					FATAL(3, "schedule failed");
+				}
 				sched_micro_tb(fkinfo, brun, brid, id_sm);
 			}
 			else {
@@ -133,7 +136,7 @@ is_sm_avail(int id_sm, unsigned n_threads)
 {
 	unsigned	n_mtbs_new = (n_threads + N_THREADS_PER_mTB - 1) / N_THREADS_PER_mTB;
 
-	if (n_cur_mtbs_per_sm[id_sm] + n_mtbs_new <= n_max_mtbs_per_sm)
+	if (n_cur_mtbs_per_sm[id_sm - 1] + n_mtbs_new <= n_max_mtbs_per_sm)
 		return TRUE;
 	return FALSE;
 }
