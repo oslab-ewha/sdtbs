@@ -1,5 +1,7 @@
 #include "sdtbs_cu.h"
 
+extern void init_sched(void);
+
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch(void);
@@ -121,6 +123,7 @@ run_sd_tbs(unsigned *pticks)
 		return FALSE;
 	}
 
+	init_sched();
 	fkinfo = setup_fedkern_info();
 
 	cudaMalloc(&d_fkinfo, fkinfo->size);

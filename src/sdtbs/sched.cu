@@ -14,6 +14,13 @@ unsigned	sched_id = 1;
 unsigned n_grid_width, n_grid_height;
 unsigned n_tb_width, n_tb_height;
 
+unsigned	n_max_mtbs_per_sm;
+
+static unsigned	*n_cur_mtbs_per_sm;
+static unsigned n_cur_mtbs;
+
+extern void assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid);
+
 extern "C" void
 setup_sched(const char *strpol)
 {
@@ -28,6 +35,35 @@ setup_sched(const char *strpol)
 	}
 
 	FATAL(1, "unknown scheduling policy: %s", strpol);
+}
+
+void
+init_sched(void)
+{
+	n_max_mtbs_per_sm = n_threads_per_MTB / N_THREADS_PER_mTB * n_MTBs_per_sm;
+	n_cur_mtbs_per_sm = (unsigned *)calloc(n_sm_count, sizeof(unsigned));
+}
+
+static BOOL
+assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
+{
+	if (use_static_sched) {
+		unsigned	idx;
+
+		if (n_cur_mtbs_per_sm[id_sm] == n_max_mtbs_per_sm)
+			return FALSE;
+		idx = id_sm * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm];
+		fkinfo->brids[idx] = brid;
+		n_cur_mtbs_per_sm[id_sm]++;
+		if (fkinfo->bruns[brid - 1].primary_mtb_idx == 0)
+			fkinfo->bruns[brid - 1].primary_mtb_idx = n_cur_mtbs + 1;
+	}
+	else {
+		fkinfo->brids[n_cur_mtbs] = brid;
+	}
+	n_cur_mtbs++;
+
+	return TRUE;
 }
 
 static void
@@ -67,7 +103,7 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 				sched_micro_tb(fkinfo, brun, brid, id_sm);
 			}
 			else {
-				assign_brid(fkinfo, 0, brid);
+				assign_fedkern_brid(fkinfo, brid);
 			}
 		}
 	}
@@ -90,4 +126,14 @@ run_schedule(fedkern_info_t *fkinfo)
 	}
 
 	return TRUE;
+}
+
+BOOL
+is_sm_avail(int id_sm, unsigned n_threads)
+{
+	unsigned	n_mtbs_new = (n_threads + N_THREADS_PER_mTB - 1) / N_THREADS_PER_mTB;
+
+	if (n_cur_mtbs_per_sm[id_sm] + n_mtbs_new <= n_max_mtbs_per_sm)
+		return TRUE;
+	return FALSE;
 }
