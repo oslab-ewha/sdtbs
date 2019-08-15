@@ -32,6 +32,7 @@ __device__ static volatile unsigned	n_tbs_assignable;
 __device__ unsigned cu_get_tb_sm_rr(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 __device__ unsigned cu_get_tb_sm_rrf(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 __device__ unsigned cu_get_tb_sm_fca(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
+__device__ unsigned cu_get_tb_sm_rrm(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 
 static __device__ int
 lock_scheduling(void)
@@ -79,6 +80,9 @@ run_schedule_in_kernel(void)
 	case 3:
 		id_sm_sched = cu_get_tb_sm_fca(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
+	case 4:
+		id_sm_sched = cu_get_tb_sm_rrm(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
+		break;
 	default:
 		break;
 	}
@@ -119,6 +123,19 @@ find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs)
 		}
 	}
 	return 0;
+}
+
+__device__ unsigned
+get_n_active_mtbs(unsigned id_sm)
+{
+	unsigned	count = 0;
+	int	i;
+
+	for (i = 1; i <= d_fkinfo->n_max_mtbs_per_sm; i++) {
+		if (BRK_INDEX(id_sm, i) != 0)
+			count++;
+	}
+	return count;
 }
 
 __device__ unsigned char

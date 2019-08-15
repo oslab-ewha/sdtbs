@@ -29,6 +29,7 @@ typedef struct {
 	benchrun_k_t	bruns[MAX_BENCHES];
 	unsigned	size;
 	unsigned	sched_id;
+	void *		sched_arg;
 	unsigned	n_sm_count;
 	unsigned	n_max_mtbs_per_sm;
 	unsigned	n_max_mtbs_per_MTB;
@@ -55,6 +56,7 @@ typedef struct {
 
 typedef struct {
 	const char	*name;
+	void *(*parse_arg)(const char *argstr);
 	unsigned (*get_tb_sm)(unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
 
@@ -65,11 +67,13 @@ extern unsigned n_tb_width, n_tb_height;
 
 __device__ uint get_smid(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
+__device__ unsigned get_n_active_mtbs(unsigned id_sm);
 
 BOOL setup_gpu_devinfo(void);
 fedkern_info_t *setup_fedkern_info(void);
 
 BOOL is_sm_avail(int id_sm, unsigned n_threads);
+unsigned get_sm_n_sched_mtbs(int id_sm);
 
 BOOL run_schedule(fedkern_info_t *kfinfo);
 

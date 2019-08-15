@@ -3,13 +3,15 @@
 extern sched_t	sched_rr;
 extern sched_t	sched_rrf;
 extern sched_t	sched_fca;
+extern sched_t	sched_rrm;
 
 static sched_t	*all_sched[] = {
-	&sched_rr, &sched_rrf, &sched_fca, NULL
+	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, NULL
 };
 
 sched_t	*sched = &sched_rr;
 unsigned	sched_id = 1;
+char		*sched_argstr;
 
 unsigned n_grid_width, n_grid_height;
 unsigned n_tb_width, n_tb_height;
@@ -17,6 +19,7 @@ unsigned n_tb_width, n_tb_height;
 unsigned	n_max_mtbs_per_sm;
 
 static unsigned	*n_cur_mtbs_per_sm;
+
 static unsigned n_cur_mtbs;
 
 extern void assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid);
@@ -27,7 +30,12 @@ setup_sched(const char *strpol)
 	unsigned	i;
 
 	for (i = 0; all_sched[i]; i++) {
-		if (strcmp(strpol, all_sched[i]->name) == 0) {
+		int	len = strlen(all_sched[i]->name);
+
+		if (strncmp(strpol, all_sched[i]->name, len) == 0 &&
+		    (strpol[len] == '\0' || strpol[len] ==':')) {
+			if (strpol[len] == ':')
+				sched_argstr = strdup(strpol + len + 1);
 			sched = all_sched[i];
 			sched_id = i + 1;
 			return;
@@ -122,6 +130,13 @@ run_schedule(fedkern_info_t *fkinfo)
 		error("static scheduling not supported");
 		return FALSE;
 	}
+	if (sched->parse_arg != NULL) {
+		if (sched_argstr == NULL) {
+			error("empty policy argument");
+			return FALSE;
+		}
+		fkinfo->sched_arg = sched->parse_arg(sched_argstr);
+	}
 
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
@@ -139,4 +154,10 @@ is_sm_avail(int id_sm, unsigned n_threads)
 	if (n_cur_mtbs_per_sm[id_sm - 1] + n_mtbs_new <= n_max_mtbs_per_sm)
 		return TRUE;
 	return FALSE;
+}
+
+unsigned
+get_sm_n_sched_mtbs(int id_sm)
+{
+	return n_cur_mtbs_per_sm[id_sm - 1];
 }

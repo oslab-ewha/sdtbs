@@ -16,5 +16,6 @@ get_tb_sm_rr(unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rr = {
 	"rr",
+	NULL,
 	get_tb_sm_rr
 };
