@@ -4,6 +4,9 @@ function usage() {
     cat <<EOF
 Usage: run.sh [options] <benchmark code:bench args only>...
  -s <# of SM>, default: 1
+ -p <policies>: hw,hwR,rr,rrS,rrf,rrfS,fca,rrm:64,rrmS:64
+ -n <tbs per SM>, default: 1,2,3,4
+ -t <threads per TB>, default: 32,64,128,256,512,1024
 EOF
 }
 
@@ -11,12 +14,27 @@ SDTBS=${SDTBS:-src/sdtbs/sdtbs}
 SDTBS_ARGS=${SDTBS_ARGS}
 
 n_sms=1
-while getopts "s:" arg
+policies="hw,hwR,rr,rrS,rrf,rrfS,fca,rrm:64,rrmS:64"
+n_tbs_per_sm="1,2,3,4"
+n_ths_per_tb="32,64,128,256,512,1024"
+while getopts "s:p:n:t:" arg
 do
     case $arg in
 	s)
 	    n_sms=$OPTARG
-	;;
+	    ;;
+	p)
+	    policies=$OPTARG
+	    ;;
+	n)
+	    n_tbs_per_sm=$OPTARG
+	    ;;
+	t)
+	    n_ths_per_tb=$OPTARG
+	    ;;
+	*)
+	    usage
+	    exit 1
     esac
 done
 
@@ -37,25 +55,28 @@ function get_elapsed_time() {
 }
 
 function run_sdtbs() {
-    get_elapsed_time -x $*
-    echo -n ' '
-    get_elapsed_time -p rr -s $*
-    echo -n ' '
-    get_elapsed_time -p rrf -s $*
-    echo -n ' '
-    get_elapsed_time -p rr $*
-    echo -n ' '
-    get_elapsed_time -p rrf $*
-    echo -n ' '
-    get_elapsed_time -p fca $*
+    for p in $(echo $policies | tr "," "\n")
+    do
+	get_elapsed_time -p $p $*
+	echo -n ' '
+    done
+    echo
+}
+
+function show_banner() {
+    echo -n "#"
+    for p in $(echo $policies | tr "," "\n")
+    do
+	echo -n "$p "
+    done
     echo
 }
 
 function run_sdtbs_tbs_threads() {
-    for m in `seq 1 4`
+    for m in $(echo $n_tbs_per_sm | tr "," "\n")
     do
 	tbs=$(($m * $n_sms))
-	for ths in 32 64 128 256 512 1024
+	for ths in $(echo $n_ths_per_tb | tr "," "\n")
 	do
 	    cmd_args=
 	    for arg in $*
@@ -69,6 +90,6 @@ function run_sdtbs_tbs_threads() {
     done
 }
 
-echo "#direct static(rr) static(rrf) dynamic(rr) rrf fca"
+show_banner
 
 run_sdtbs_tbs_threads $*
