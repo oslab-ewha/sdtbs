@@ -6,16 +6,18 @@ usage(void)
 	printf(
 "sdtbs <options> <benchmark spec>...\n"
 "<options>:\n"
-"  -s: use static schedule\n"
 "  -d <device no>: select GPU device\n"
 "  -p <policy:optional arg>: scheduling policy\n"
 "     optional policy argument can be provided with a colon\n"
-"     supported policies: rr(round-robin, default)\n"
+"     supported policies: hw(hardware scheduling)\n"
+"                         hwR(hardware scheduing with relocatable)\n"
+"                         rr(round-robin, default)\n"
+"                         rrS(rr with static allocation)\n"
 "                         rrf(round-robin fully)\n"
-"                         rrm(round-robin max):max mtbs per sm\n"
+"                         rrfS(rrf with static allocation)\n"
 "                         fca(first come allocation)\n"
-"  -x: run direct mode(with relocatable code)\n"
-"  -X: run direct mode\n"
+"                         rrm(round-robin max):max mtbs per sm\n"
+"                         rrmS(rrm with static allocation):max mtbs per sm\n"
 "  -M <MTB count per sm>\n"
 "  -T <thread count per MTB>\n"
 "  -h: help\n"
@@ -32,10 +34,6 @@ usage(void)
 "   gma: <global mem in KB>,<stride for mem access>,<iterations>\n"
 		);
 }
-
-BOOL	direct_mode;
-BOOL	use_relocatable = TRUE;
-BOOL	use_static_sched;
 
 unsigned	devno;
 unsigned	arg_n_MTBs_per_sm;
@@ -99,21 +97,13 @@ parse_options(int argc, char *argv[])
 {
 	int	c;
 
-	while ((c = getopt(argc, argv, "sd:p:xXM:T:h")) != -1) {
+	while ((c = getopt(argc, argv, "d:p:M:T:h")) != -1) {
 		switch (c) {
-		case 's':
-			use_static_sched = TRUE;
-			break;
 		case 'd':
 			select_device(optarg);
 			break;
 		case 'p':
 			setup_sched(optarg);
-			break;
-		case 'X':
-			use_relocatable = FALSE;
-		case 'x':
-			direct_mode = TRUE;
 			break;
 		case 'M':
 			setup_n_MTBs(optarg);
@@ -146,8 +136,7 @@ main(int argc, char *argv[])
 		return 2;
 	}
 
-	res = direct_mode ? run_native_tbs(&elapsed): run_sd_tbs(&elapsed);
-	if (res) {
+	if (run_tbs(&elapsed)) {
 		report(elapsed);
 		return 0;
 	}

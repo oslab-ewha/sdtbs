@@ -56,10 +56,12 @@ typedef struct {
 
 typedef struct {
 	const char	*name;
+	BOOL		direct_mode, use_static_sched, use_relocatable;
 	void *(*parse_arg)(const char *argstr);
 	unsigned (*get_tb_sm)(unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
 
+extern sched_t		*sched;
 extern benchrun_t	benchruns[MAX_BENCHES];
 
 extern unsigned n_grid_width, n_grid_height;

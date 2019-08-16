@@ -23,9 +23,6 @@ extern "C" {
 #define ASSERT(cond)                    do { assert(cond); } while (0)
 #define FATAL(exitcode, fmt, ...)       do { error(fmt, ## __VA_ARGS__); exit(exitcode); } while (0)
 
-extern BOOL	direct_mode;
-extern BOOL	use_relocatable;
-extern BOOL	use_static_sched;
 extern unsigned	sched_id;
 extern unsigned	devno;
 
@@ -36,8 +33,7 @@ void report(unsigned elapsed);
 
 BOOL select_gpu_device(unsigned devno);
 
-BOOL run_native_tbs(unsigned *pticks);
-BOOL run_sd_tbs(unsigned *pticks);
+BOOL run_tbs(unsigned *pticks);
 
 void setup_sched(const char *strpol);
 

@@ -1,15 +1,23 @@
 #include "sdtbs_cu.h"
 
+extern sched_t	sched_hw;
+extern sched_t	sched_hwR;
 extern sched_t	sched_rr;
+extern sched_t	sched_rrS;
 extern sched_t	sched_rrf;
+extern sched_t	sched_rrfS;
 extern sched_t	sched_fca;
 extern sched_t	sched_rrm;
+extern sched_t	sched_rrmS;
 
 static sched_t	*all_sched[] = {
-	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, NULL
+	&sched_hw, &sched_hwR,
+	&sched_rr, &sched_rrS,
+	&sched_rrf, &sched_rrfS,
+	&sched_fca, &sched_rrm, &sched_rrmS, NULL
 };
 
-sched_t	*sched = &sched_rr;
+sched_t	*sched = &sched_hw;
 unsigned	sched_id = 1;
 char		*sched_argstr;
 
@@ -21,6 +29,9 @@ unsigned	n_max_mtbs_per_sm;
 static unsigned	*n_cur_mtbs_per_sm;
 
 static unsigned n_cur_mtbs;
+
+extern BOOL run_native_tbs(unsigned *pticks);
+extern BOOL run_sd_tbs(unsigned *pticks);
 
 extern void assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid);
 
@@ -55,7 +66,7 @@ init_sched(void)
 static BOOL
 assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
 {
-	if (use_static_sched) {
+	if (sched->use_static_sched) {
 		unsigned	idx;
 
 		if (n_cur_mtbs_per_sm[id_sm - 1] == n_max_mtbs_per_sm)
@@ -106,7 +117,7 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 
 	for (i = 0; i < brun->n_grid_height; i++) {
 		for (j = 0; j < brun->n_grid_width; j++) {
-			if (use_static_sched) {
+			if (sched->use_static_sched) {
 				unsigned	id_sm = sched->get_tb_sm(j, i);
 				if (id_sm == 0) {
 					FATAL(3, "schedule failed");
@@ -126,7 +137,7 @@ run_schedule(fedkern_info_t *fkinfo)
 	benchrun_t	*brun;
 	int	i;
 
-	if (sched->get_tb_sm == NULL && use_static_sched) {
+	if (sched->get_tb_sm == NULL && sched->use_static_sched) {
 		error("static scheduling not supported");
 		return FALSE;
 	}
@@ -160,4 +171,13 @@ unsigned
 get_sm_n_sched_mtbs(int id_sm)
 {
 	return n_cur_mtbs_per_sm[id_sm - 1];
+}
+
+extern "C" BOOL
+run_tbs(unsigned *pticks)
+{
+	if (sched->direct_mode)
+		return run_native_tbs(pticks);
+	else
+		return run_sd_tbs(pticks);
 }

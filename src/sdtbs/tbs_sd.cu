@@ -112,7 +112,7 @@ collect_results(fedkern_info_t *fkinfo)
 	}
 }
 
-extern "C" BOOL
+BOOL
 run_sd_tbs(unsigned *pticks)
 {
 	fedkern_info_t	*fkinfo;

@@ -5,7 +5,7 @@
 
 static cudaStream_t	strms[MAX_BENCHES];
 
-extern "C" BOOL
+BOOL
 run_native_tbs(unsigned *pticks)
 {
 	benchrun_t	*brun;
@@ -28,7 +28,7 @@ run_native_tbs(unsigned *pticks)
 		bench_func_t	bench;
 		cudaError_t	err;
 
-		bench = use_relocatable ? brun->info->bench_func: brun->info->bench_func_noreloc;
+		bench = sched->use_relocatable ? brun->info->bench_func: brun->info->bench_func_noreloc;
 		bench(strms[i], dimGrid, dimBlock, (void **)((char *)d_args_brun + SIZE_ARGS * i), d_benches_res + i);
 		err = cudaGetLastError();
 		if (err != cudaSuccess) {

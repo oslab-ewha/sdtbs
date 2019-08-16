@@ -71,16 +71,16 @@ run_schedule_in_kernel(void)
 	brk = &d_fkinfo->bruns[brid - 1];
 
 	switch (d_fkinfo->sched_id) {
-	case 1:
+	case 3:
 		id_sm_sched = cu_get_tb_sm_rr(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
-	case 2:
+	case 5:
 		id_sm_sched = cu_get_tb_sm_rrf(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
-	case 3:
+	case 7:
 		id_sm_sched = cu_get_tb_sm_fca(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
-	case 4:
+	case 8:
 		id_sm_sched = cu_get_tb_sm_rrm(d_fkinfo, brk->n_mtbs_per_tb, &idx_mtb_start);
 		break;
 	default:

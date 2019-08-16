@@ -16,6 +16,28 @@ get_tb_sm_rr(unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rr = {
 	"rr",
+	FALSE, FALSE, FALSE,
+	NULL,
+	NULL
+};
+
+sched_t	sched_rrS = {
+	"rrS",
+	FALSE, TRUE, FALSE,
 	NULL,
 	get_tb_sm_rr
+};
+
+sched_t	sched_hw = {
+	"hw",
+	TRUE, FALSE, FALSE,
+	NULL,
+	NULL,
+};
+
+sched_t	sched_hwR = {
+	"hwR",
+	TRUE, FALSE, TRUE,
+	NULL,
+	NULL,
 };

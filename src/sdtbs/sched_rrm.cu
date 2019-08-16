@@ -35,6 +35,14 @@ get_tb_sm_rrm(unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rrm = {
 	"rrm",
+	FALSE, FALSE, FALSE,
+	parse_arg_rrm,
+	get_tb_sm_rrm
+};
+
+sched_t	sched_rrmS = {
+	"rrmS",
+	FALSE, TRUE, FALSE,
 	parse_arg_rrm,
 	get_tb_sm_rrm
 };
