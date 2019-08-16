@@ -1,5 +1,7 @@
 #include "sdtbs_cu.h"
 
+#define EPOCH_MAX		16
+
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
 #define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
 #define mTB_INDEX_MY(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
@@ -93,8 +95,9 @@ run_schedule_in_kernel(void)
 		for (i = 0; i < brk->n_mtbs_per_tb; i++) {
 			if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0)
 				BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
-			else
-				BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, EPOCH(id_sm_sched, idx_mtb_start + i) + 1) = brid;
+			else {
+				BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX) = brid;
+			}
 		}
 		n_tbs_assignable++;
 	}
@@ -174,8 +177,9 @@ advance_epoch(void)
 {
 	unsigned	id_sm = get_smid() + 1;
 
-	if (IS_LEADER_THREAD())
-		EPOCH_MY(id_sm)++;
+	if (IS_LEADER_THREAD()) {
+		EPOCH_MY(id_sm) = (EPOCH_MY(id_sm) + 1) % EPOCH_MAX;
+	}
 
 	__syncwarp();
 }
@@ -196,7 +200,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 
 	d_fkinfo = _fkinfo;
 
-	mATs_size = d_fkinfo->n_tbs * mTB_TOTAL_COUNT();
+	mATs_size = EPOCH_MAX * mTB_TOTAL_COUNT();
 	mATs = (volatile unsigned char *)malloc(mATs_size);
 	if (mATs == NULL) {
 		printf("too big mAT: %d\n", mATs_size);
