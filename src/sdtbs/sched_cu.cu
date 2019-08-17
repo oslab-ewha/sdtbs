@@ -15,6 +15,22 @@
 #define BRK_INDEX_MY(id_sm)	mTB_ALLOC_TABLE_MY(id_sm)[mTB_INDEX_MY(id_sm) - 1]
 #define BRK_INDEX_EPOCH(id_sm, idx, epch)	mTB_ALLOC_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
 
+#define BRK_N_MTBS_ASSIGNABLE(brid)	brk_n_mtbs_assignable[brid - 1]
+
+#define mTB_OFFSET_TABLE_EPOCH(epch)	(mOTs + mTB_TOTAL_COUNT() * (epch))
+#define mTB_OFFSET_TABLE(id_sm, idx)	(mOTs + mTB_TOTAL_COUNT() * EPOCH(id_sm, idx))
+#define mTB_OFFSET_TABLE_MY(id_sm)	(mOTs + mTB_TOTAL_COUNT() * EPOCH_MY(id_sm))
+
+#define mTB_OFFSET_TB_EPOCH(id_sm, idx, epch)	mTB_OFFSET_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
+#define mTB_OFFSET_TB(id_sm, idx)	mTB_OFFSET_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
+#define mTB_OFFSET_TB_MY(id_sm)		mTB_OFFSET_TABLE_MY(id_sm)[mTB_INDEX_MY(id_sm) - 1]
+
+#define mTB_SYNC_TABLE_EPOCH(epch)    (mSTs + mTB_TOTAL_COUNT() * (epch))
+#define mTB_SYNC_TABLE(id_sm, idx)    (mSTs + mTB_TOTAL_COUNT() * EPOCH(id_sm, idx))
+
+#define mTB_SYNC_EPOCH(id_sm, idx, epch)	mTB_SYNC_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
+#define mTB_SYNC(id_sm, idx)	mTB_SYNC_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
+
 #define IS_LEADER_THREAD()	(threadIdx.x % N_THREADS_PER_mTB == 0)
 
 #define IS_SCHEDULE_DONE()	(n_tbs_assignable == d_fkinfo->n_tbs)
@@ -28,6 +44,14 @@ __device__ static fedkern_info_t	*d_fkinfo;
 /* epoch directory for mTB allocation table */
 __device__ static volatile unsigned char	*mATs;
 __device__ static volatile unsigned	*mtb_epochs;
+
+/* offset in TB per mTB */
+__device__ static volatile unsigned	*mOTs;
+/* sync counter per mTB */
+__device__ static volatile unsigned	*mSTs;
+
+/* number of assignable mtbs per brun kernel */
+__device__ static volatile unsigned	brk_n_mtbs_assignable[MAX_BENCHES];
 
 __device__ static volatile unsigned	n_tbs_assignable;
 
@@ -93,12 +117,19 @@ run_schedule_in_kernel(void)
 		if (brk->primary_mtb_idx == 0)
 			brk->primary_mtb_idx = idx_mtb_start;
 		for (i = 0; i < brk->n_mtbs_per_tb; i++) {
-			if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0)
+			if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0) {
 				BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
+				mTB_OFFSET_TB(id_sm_sched, idx_mtb_start + i) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
+				mTB_SYNC(id_sm_sched, idx_mtb_start + i) = 0;
+			}
 			else {
-				BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX) = brid;
+				int	epoch_next = (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX;
+				BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = brid;
+				mTB_OFFSET_TB_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
+				mTB_SYNC_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = 0;
 			}
 		}
+		BRK_N_MTBS_ASSIGNABLE(brid) += brk->n_mtbs_per_tb;
 		n_tbs_assignable++;
 	}
 
@@ -184,10 +215,47 @@ advance_epoch(void)
 	__syncwarp();
 }
 
+__device__ benchrun_k_t *
+get_brk(void)
+{
+	unsigned	id_sm = get_smid() + 1;
+	unsigned	brid = BRK_INDEX_MY(id_sm);
+
+	return &d_fkinfo->bruns[brid - 1];
+}
+
+__device__ unsigned
+get_offset_TB(void)
+{
+	unsigned	id_sm = get_smid() + 1;
+
+	return mTB_OFFSET_TB_MY(id_sm);
+}
+
+__device__ void
+sync_TB_threads(void)
+{
+	if (IS_LEADER_THREAD()) {
+		benchrun_k_t	*brk = get_brk();
+
+		if (brk->n_mtbs_per_tb > 1) {
+			unsigned	id_sm = get_smid() + 1;
+			unsigned	offset = get_offset_TB();
+			int		idx_sync = mTB_INDEX_MY(id_sm) - offset;
+
+			atomicInc((unsigned *)&mTB_SYNC(id_sm, idx_sync), brk->n_mtbs_per_tb - 1);
+			while (mTB_SYNC(id_sm, idx_sync) > 0) {
+				printf("%d\n", mTB_SYNC(id_sm, idx_sync));
+			}
+		}
+	}
+	__syncwarp();
+}
+
 __device__ void
 setup_dyn_sched(fedkern_info_t *_fkinfo)
 {
-	unsigned	mATs_size;
+	int	size;
 	int	i;
 
 	if (blockIdx.x != 0 || blockIdx.y != 0) {
@@ -200,26 +268,29 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 
 	d_fkinfo = _fkinfo;
 
-	mATs_size = EPOCH_MAX * mTB_TOTAL_COUNT();
-	mATs = (volatile unsigned char *)malloc(mATs_size);
-	if (mATs == NULL) {
-		printf("too big mAT: %d\n", mATs_size);
-		going_to_shutdown = TRUE;
-		goto out;
-	}
-	for (i = 0; i < mATs_size; i++) {
+	size = EPOCH_MAX * mTB_TOTAL_COUNT();
+	mATs = (volatile unsigned char *)malloc(size);
+	for (i = 0; i < size; i++) {
 		mATs[i] = 0;
+	}
+
+	mOTs = (volatile unsigned *)malloc(size * sizeof(unsigned));
+	mSTs = (volatile unsigned *)malloc(size * sizeof(unsigned));
+	for (i = 0; i < size; i++) {
+		mOTs[i] = 0;
+		mSTs[i] = 0;
 	}
 
 	mtb_epochs = (volatile unsigned *)malloc(mTB_TOTAL_COUNT() * sizeof(unsigned));
 	if (mtb_epochs == NULL) {
-		printf("out of memory: epochs cannot be allocated\n");
+		printf("out of memory: epochs or offset table cannot be allocated\n");
 		going_to_shutdown = TRUE;
 		goto out;
 	}
 	for (i = 0; i < mTB_TOTAL_COUNT(); i++) {
 		mtb_epochs[i] = 0;
 	}
+
 out:
 	initialized = 1;
 }

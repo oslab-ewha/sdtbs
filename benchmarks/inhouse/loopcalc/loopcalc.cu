@@ -4,6 +4,8 @@
 
 #include <math_constants.h>
 
+#include "../../benchapi.h"
+
 /* NOTE: nvcc over 9.0 has a problem of compilation freeze.
  * This seems to relate to ptx optimization.
  * nvcc with -Xptxas -O0 disables all optimizations. loopcalc Makefile.am has this option.
@@ -75,66 +77,11 @@ calc_double(int n_iters)
 	return value;
 }
 
-__device__ static double
-calc_float_double(int n_iters1, int n_iters2)
-{
-	if (!(threadIdx.x / 32) % 2)
-		return calc_float(n_iters1);
-	else
-		return calc_double(n_iters2);
-}
-
-__device__ static double
-calc_int_float(int n_iters1, int n_iters2)
-{
-	if (!(threadIdx.x / 32) % 2)
-		return calc_int(n_iters1);
-	else
-		return calc_float(n_iters2);
-}
-
-__device__ static double
-calc_int_double(int n_iters1, int n_iters2)
-{
-	if (!(threadIdx.x / 32) % 2)
-		return calc_int(n_iters1);
-	else
-		return calc_double(n_iters2);
-}
-
-__device__ static double
-calc_float_double_tb(int n_iters1, int n_iters2)
-{
-	if (!(blockIdx.x % 2))
-		return calc_float(n_iters1);
-	else
-		return calc_double(n_iters2);
-}
-
-__device__ static double
-calc_int_float_tb(int n_iters1, int n_iters2)
-{
-	if (!(blockIdx.x % 2))
-		return calc_int(n_iters1);
-	else
-		return calc_float(n_iters2);
-}
-
-__device__ static double
-calc_int_double_tb(int n_iters1, int n_iters2)
-{
-	if (!(blockIdx.x % 2))
-		return calc_int(n_iters1);
-	else
-		return calc_double(n_iters2);
-}
-
 __device__ int
 loopcalc(void *args[])
 {
 	int	calctype = (int)(long long)args[0];
 	int	n_iters1 = (int)(long long)args[1];
-	int	n_iters2 = (int)(long long)args[2];
 	int	ret = 0;
 
 	switch (calctype) {
@@ -147,24 +94,6 @@ loopcalc(void *args[])
 	case 3:
 		ret = (int)fmod(calc_double(n_iters1), 100000000.0);
 		break;
-	case 4:
-		ret = (int)calc_float_double(n_iters1, n_iters2);
-		break;
-	case 5:
-		ret = (int)calc_int_float(n_iters1, n_iters2);
-		break;
-	case 6:
-		ret = (int)calc_int_double(n_iters1, n_iters2);
-		break;
-	case 7:
-		ret = (int)calc_float_double_tb(n_iters1, n_iters2);
-		break;
-	case 8:
-		ret = (int)calc_int_float_tb(n_iters1, n_iters2);
-		break;
-	case 9:
-		ret = (int)calc_int_double_tb(n_iters1, n_iters2);
-		break;
 	default:
 		ret = (int)calc_empty(n_iters1);
 		break;
@@ -175,6 +104,7 @@ loopcalc(void *args[])
 __global__ static void
 kernel_loopcalc(void *args[], int *pres)
 {
+	native_mode = 1;
 	*pres = loopcalc(args);
 }
 

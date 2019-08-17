@@ -2,6 +2,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "../../benchapi.h"
+
 __device__ int
 gma(void *args[])
 {
@@ -14,7 +16,7 @@ gma(void *args[])
 	int	value = 0;
 	int	i, j;
 
-	memidx = (unsigned)(clock() * 19239913 * threadIdx.x) % memidx_max;
+	memidx = (unsigned)(clock() * 19239913 * get_threadIdxX()) % memidx_max;
 	for (i = 0; i < n_iters; i++) {
 		for (j = 0; j < 10000; j ++, memidx += stride) {
 			if (memidx >= memidx_max)
@@ -52,6 +54,7 @@ cookarg_gma(void *args[])
 __global__ static void
 kernel_gma(void *args[], int *pres)
 {
+	native_mode = 1;
 	*pres = gma(args);
 }
 

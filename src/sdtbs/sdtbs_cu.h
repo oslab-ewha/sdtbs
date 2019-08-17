@@ -21,6 +21,8 @@ typedef struct {
 	unsigned	skid;
 	void *	args[MAX_ARGS];
 	int		res;
+	unsigned	n_grid_width, n_grid_height;
+	unsigned	n_tb_width, n_tb_height;
 	unsigned	n_mtbs_per_tb;
 	int		primary_mtb_idx;
 } benchrun_k_t;
@@ -58,14 +60,11 @@ typedef struct {
 	const char	*name;
 	BOOL		direct_mode, use_static_sched, use_relocatable;
 	void *(*parse_arg)(const char *argstr);
-	unsigned (*get_tb_sm)(unsigned n_tbs_x, unsigned n_tbs_y);
+	unsigned (*get_tb_sm)(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
 
 extern sched_t		*sched;
 extern benchrun_t	benchruns[MAX_BENCHES];
-
-extern unsigned n_grid_width, n_grid_height;
-extern unsigned n_tb_width, n_tb_height;
 
 __device__ uint get_smid(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);

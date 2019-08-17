@@ -18,7 +18,7 @@ parse_arg_rrm(const char *argstr)
 }
 
 static unsigned
-get_tb_sm_rrm(unsigned n_tb_x, unsigned n_tb_y)
+get_tb_sm_rrm(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tb_x, unsigned n_tb_y)
 {
 	unsigned	id_sm_start = id_sm;
 

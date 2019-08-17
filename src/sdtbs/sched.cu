@@ -21,9 +21,6 @@ sched_t	*sched = &sched_hw;
 unsigned	sched_id = 1;
 char		*sched_argstr;
 
-unsigned n_grid_width, n_grid_height;
-unsigned n_tb_width, n_tb_height;
-
 unsigned	n_max_mtbs_per_sm;
 
 static unsigned	*n_cur_mtbs_per_sm;
@@ -108,17 +105,16 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 	brk = &fkinfo->bruns[brid - 1];
 	brk->skid = brun->info->skid;
 	memcpy(brk->args, brun->args, sizeof(void *) * MAX_ARGS);
+	brk->n_grid_width = brun->n_grid_width;
+	brk->n_grid_height = brun->n_grid_height;
+	brk->n_tb_width = brun->n_tb_width;
+	brk->n_tb_height = brun->n_tb_height;
 	brk->n_mtbs_per_tb = brun->n_tb_width * brun->n_tb_height / N_THREADS_PER_mTB;
-
-	n_grid_width = brun->n_grid_width;
-	n_grid_height = brun->n_grid_height;
-	n_tb_width = brun->n_tb_width;
-	n_tb_height = brun->n_tb_height;
 
 	for (i = 0; i < brun->n_grid_height; i++) {
 		for (j = 0; j < brun->n_grid_width; j++) {
 			if (sched->use_static_sched) {
-				unsigned	id_sm = sched->get_tb_sm(j, i);
+				unsigned	id_sm = sched->get_tb_sm(brun->n_tb_width, brun->n_tb_height, j, i);
 				if (id_sm == 0) {
 					FATAL(3, "schedule failed");
 				}
