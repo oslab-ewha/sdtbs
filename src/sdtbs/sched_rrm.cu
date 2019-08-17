@@ -18,11 +18,11 @@ parse_arg_rrm(const char *argstr)
 }
 
 static unsigned
-get_tb_sm_rrm(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tb_x, unsigned n_tb_y)
+get_tb_sm_rrm(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
 	unsigned	id_sm_start = id_sm;
 
-	while (!is_sm_avail(id_sm, n_tb_width * n_tb_height) || get_sm_n_sched_mtbs(id_sm) == max_mtbs_per_sm) {
+	while (!is_sm_avail(id_sm, dimBlock.x * dimBlock.y) || get_sm_n_sched_mtbs(id_sm) == max_mtbs_per_sm) {
 		if (id_sm == n_sm_count)
 			id_sm = 1;
 		else

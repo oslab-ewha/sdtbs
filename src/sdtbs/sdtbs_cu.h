@@ -14,15 +14,14 @@ extern int	n_benches;
 extern int	n_tbs_submitted;
 extern int	n_mtbs_submitted;
 
-typedef int (*cookarg_func_t)(void *args[]);
+typedef int (*cookarg_func_t)(dim3 dimGrid, dim3 dimBlock, void *args[]);
 typedef void (*bench_func_t)(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres);
 
 typedef struct {
 	unsigned	skid;
 	void *	args[MAX_ARGS];
 	int		res;
-	unsigned	n_grid_width, n_grid_height;
-	unsigned	n_tb_width, n_tb_height;
+	dim3		dimGrid, dimBlock;
 	unsigned	n_mtbs_per_tb;
 	int		primary_mtb_idx;
 } benchrun_k_t;
@@ -50,8 +49,7 @@ typedef struct {
 
 typedef struct {
 	benchinfo_t	*info;
-	int	n_grid_width, n_grid_height;
-	int	n_tb_width, n_tb_height;
+	dim3	dimGrid, dimBlock;
 	void *	args[MAX_ARGS];
 	int	res;
 } benchrun_t;
@@ -60,7 +58,7 @@ typedef struct {
 	const char	*name;
 	BOOL		direct_mode, use_static_sched, use_relocatable;
 	void *(*parse_arg)(const char *argstr);
-	unsigned (*get_tb_sm)(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tbs_x, unsigned n_tbs_y);
+	unsigned (*get_tb_sm)(dim3 dimBlock, unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
 
 extern sched_t		*sched;

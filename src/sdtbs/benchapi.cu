@@ -14,7 +14,7 @@ get_gridDimX(void)
         if (native_mode)
 		return gridDim.x;
 	brk = get_brk();
-	return brk->n_grid_width;
+	return brk->dimGrid.x;
 }
 
 __device__ int
@@ -25,7 +25,7 @@ get_gridDimY(void)
         if (native_mode)
 		return gridDim.y;
 	brk = get_brk();
-	return brk->n_grid_height;
+	return brk->dimGrid.y;
 }
 
 __device__ int
@@ -38,7 +38,7 @@ get_blockIdxX(void)
 		return blockIdx.x;
 	brk = get_brk();
 	offset = get_offset_TB();
-	return ((offset * N_THREADS_PER_mTB) / brk->n_tb_width) % brk->n_grid_width;
+	return ((offset * N_THREADS_PER_mTB) / brk->dimBlock.x) % brk->dimGrid.x;
 }
 
 __device__ int
@@ -51,7 +51,7 @@ get_blockIdxY(void)
 		return blockIdx.y;
 	brk = get_brk();
 	offset = get_offset_TB();
-	return ((offset * N_THREADS_PER_mTB) / brk->n_tb_width) / brk->n_grid_width;
+	return ((offset * N_THREADS_PER_mTB) / brk->dimBlock.x) / brk->dimGrid.x;
 }
 
 __device__ int
@@ -62,7 +62,7 @@ get_blockDimX(void)
 	if (native_mode)
 		return blockDim.x;
 	brk = get_brk();
-	return brk->n_tb_width;
+	return brk->dimBlock.x;
 }
 
 __device__ int
@@ -73,7 +73,7 @@ get_blockDimY(void)
 	if (native_mode)
 		return blockDim.y;
 	brk = get_brk();
-	return brk->n_tb_height;
+	return brk->dimBlock.y;
 }
 
 __device__ int
@@ -86,7 +86,7 @@ get_threadIdxX(void)
 		return threadIdx.x;
 	brk = get_brk();
 	offset = get_offset_TB();
-	return ((offset * N_THREADS_PER_mTB) % brk->n_tb_width) + threadIdx.x % N_THREADS_PER_mTB;
+	return ((offset * N_THREADS_PER_mTB) % brk->dimBlock.x) + threadIdx.x % N_THREADS_PER_mTB;
 }
 
 __device__ void

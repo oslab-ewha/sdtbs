@@ -2,11 +2,11 @@
 
 #define BENCH_PROTO(name)	void name(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
 #define BENCHMARK(base)	BENCH_PROTO(bench_##base); BENCH_PROTO(bench_##base##_reloc);
+#define BENCH_COOKARG(name)	int cookarg_##name(dim3 dimGrid, dim3 dimBlock, void *args[]);
 
 BENCHMARK(loopcalc)
 BENCHMARK(gma)
-
-int cookarg_gma(void *args[]);
+BENCH_COOKARG(gma)
 
 benchrun_t	benchruns[MAX_BENCHES];
 int	n_benches;
@@ -61,13 +61,13 @@ parse_args(const char *c_args, benchrun_t *brun)
 
 	if (c_args == NULL)
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_grid_width))
+	if (!parse_int(&c_args, (int *)&brun->dimGrid.x))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_grid_height))
+	if (!parse_int(&c_args, (int *)&brun->dimGrid.y))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_tb_width))
+	if (!parse_int(&c_args, (int *)&brun->dimBlock.x))
 		return FALSE;
-	if (!parse_int(&c_args, &brun->n_tb_height))
+	if (!parse_int(&c_args, (int *)&brun->dimBlock.y))
 		return FALSE;
 
 	for (i = 0; i < MAX_ARGS; i++) {
@@ -96,15 +96,15 @@ add_bench(const char *code, const char *args)
 	if (!parse_args(args, brun))
 		return FALSE;
 	if (info->cookarg_func != NULL) {
-		if (info->cookarg_func(brun->args) < 0) {
+		if (info->cookarg_func(brun->dimGrid, brun->dimBlock, brun->args) < 0) {
 			error("failed to cook arguments");
 			return FALSE;
 		}
 	}
 	n_benches++;
-	n_tbs = brun->n_grid_width * brun->n_grid_height;
+	n_tbs = brun->dimGrid.x * brun->dimGrid.y;
 	n_tbs_submitted += n_tbs;
-	n_mtbs_submitted += (n_tbs * (brun->n_tb_width * brun->n_tb_height / N_THREADS_PER_mTB));
+	n_mtbs_submitted += (n_tbs * (brun->dimBlock.x * brun->dimBlock.y / N_THREADS_PER_mTB));
 
 	return TRUE;
 }

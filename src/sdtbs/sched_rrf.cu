@@ -3,11 +3,11 @@
 static unsigned	id_sm = 1;
 
 static unsigned
-get_tb_sm_rrf(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tb_x, unsigned n_tb_y)
+get_tb_sm_rrf(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
 	unsigned	id_sm_old = id_sm;
 
-	while (!is_sm_avail(id_sm, n_tb_width * n_tb_height)) {
+	while (!is_sm_avail(id_sm, dimBlock.x * dimBlock.y)) {
 		if (id_sm == n_sm_count)
 			id_sm = 1;
 		else

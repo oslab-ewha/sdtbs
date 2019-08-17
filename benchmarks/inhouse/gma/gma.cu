@@ -28,7 +28,7 @@ gma(void *args[])
 }
 
 int
-cookarg_gma(void *args[])
+cookarg_gma(dim3 dimGrid, dim3 dimBlock, void *args[])
 {
 	unsigned char	*gmem;
 	int	gmemsize = (int)(long long)args[0];

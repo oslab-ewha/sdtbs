@@ -23,13 +23,11 @@ run_native_tbs(unsigned *pticks)
 	init_tickcount();
 
 	for (i = 0, brun = benchruns; i < n_benches; i++, brun++) {
-		dim3	dimGrid(brun->n_grid_width, brun->n_grid_height);
-		dim3	dimBlock(brun->n_tb_width, brun->n_tb_height);
 		bench_func_t	bench;
 		cudaError_t	err;
 
 		bench = sched->use_relocatable ? brun->info->bench_func: brun->info->bench_func_noreloc;
-		bench(strms[i], dimGrid, dimBlock, (void **)((char *)d_args_brun + SIZE_ARGS * i), d_benches_res + i);
+		bench(strms[i], brun->dimGrid, brun->dimBlock, (void **)((char *)d_args_brun + SIZE_ARGS * i), d_benches_res + i);
 		err = cudaGetLastError();
 		if (err != cudaSuccess) {
 			printf("error: %s\n", cudaGetErrorString(err));

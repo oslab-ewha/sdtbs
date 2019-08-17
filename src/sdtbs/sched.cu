@@ -87,9 +87,9 @@ sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, uns
 {
 	int	i;
 
-	ASSERT(brun->n_tb_width % N_THREADS_PER_mTB == 0);
+	ASSERT(brun->dimBlock.x % N_THREADS_PER_mTB == 0);
 
-	for (i = 0; i < brun->n_tb_width * brun->n_tb_height; i += N_THREADS_PER_mTB) {
+	for (i = 0; i < brun->dimBlock.x * brun->dimBlock.y; i += N_THREADS_PER_mTB) {
 		if (!assign_brid(fkinfo, id_sm, brid)) {
 			FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
 		}
@@ -105,16 +105,14 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 	brk = &fkinfo->bruns[brid - 1];
 	brk->skid = brun->info->skid;
 	memcpy(brk->args, brun->args, sizeof(void *) * MAX_ARGS);
-	brk->n_grid_width = brun->n_grid_width;
-	brk->n_grid_height = brun->n_grid_height;
-	brk->n_tb_width = brun->n_tb_width;
-	brk->n_tb_height = brun->n_tb_height;
-	brk->n_mtbs_per_tb = brun->n_tb_width * brun->n_tb_height / N_THREADS_PER_mTB;
+	brk->dimGrid = brun->dimGrid;
+	brk->dimBlock = brun->dimBlock;
+	brk->n_mtbs_per_tb = brun->dimBlock.x * brun->dimBlock.y / N_THREADS_PER_mTB;
 
-	for (i = 0; i < brun->n_grid_height; i++) {
-		for (j = 0; j < brun->n_grid_width; j++) {
+	for (i = 0; i < brun->dimGrid.y; i++) {
+		for (j = 0; j < brun->dimGrid.x; j++) {
 			if (sched->use_static_sched) {
-				unsigned	id_sm = sched->get_tb_sm(brun->n_tb_width, brun->n_tb_height, j, i);
+				unsigned	id_sm = sched->get_tb_sm(brun->dimBlock, j, i);
 				if (id_sm == 0) {
 					FATAL(3, "schedule failed");
 				}

@@ -3,7 +3,7 @@
 static unsigned	id_sm = 1;
 
 static unsigned
-get_tb_sm_rr(unsigned n_tb_width, unsigned n_tb_height, unsigned n_tb_x, unsigned n_tb_y)
+get_tb_sm_rr(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
 	int	id_sm_cur = id_sm;
 
