@@ -6,6 +6,8 @@ extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch(void);
 
+extern __device__ BOOL	static_sched;
+
 __device__ BOOL	going_to_shutdown;
 
 __device__ int loopcalc(void *args[]);
@@ -34,6 +36,8 @@ kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
 	unsigned char	brid;
 	int	idx;
 	int	res;
+
+	static_sched = TRUE;
 
 	idx = get_smid() * fkinfo->n_max_mtbs_per_sm + fkinfo->n_max_mtbs_per_MTB * blockIdx.y + threadIdx.x / N_THREADS_PER_mTB;
 
