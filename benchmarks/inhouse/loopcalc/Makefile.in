@@ -505,7 +505,7 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 .cu.o:
-	@NVCC_PATH@ -dc $(AM_CPPFLAGS) @CUDA_CPPFLAGS@ @CUDA_GENCODE@ $< -o $@
+	@NVCC_PATH@ -dc $(AM_CPPFLAGS) --maxrregcount 32 @CUDA_CPPFLAGS@ @CUDA_GENCODE@ $< -o $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

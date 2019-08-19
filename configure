@@ -738,7 +738,7 @@ enable_silent_rules
 enable_maintainer_mode
 enable_dependency_tracking
 with_cuda
-with_sm
+with_gencode
 '
       ac_precious_vars='build_alias
 host_alias
@@ -4519,9 +4519,9 @@ else
 fi
 
 
-# Check whether --with-sm was given.
-if test "${with_sm+set}" = set; then :
-  withval=$with_sm; cuda_gencode=$withval
+# Check whether --with-gencode was given.
+if test "${with_gencode+set}" = set; then :
+  withval=$with_gencode; cuda_gencode=$withval
 fi
 
 
