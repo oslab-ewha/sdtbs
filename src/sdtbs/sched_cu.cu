@@ -1,6 +1,6 @@
 #include "sdtbs_cu.h"
 
-#define EPOCH_MAX		256
+#define EPOCH_MAX		128
 
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
 #define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
@@ -46,9 +46,9 @@ __device__ static volatile unsigned char	*mATs;
 __device__ static volatile unsigned	*mtb_epochs;
 
 /* offset in TB per mTB */
-__device__ static volatile unsigned	*mOTs;
+__device__ static volatile unsigned short	*mOTs;
 /* sync counter per mTB */
-__device__ static volatile unsigned	*mSTs;
+__device__ static volatile unsigned short	*mSTs;
 
 /* number of assignable mtbs per brun kernel */
 __device__ static volatile unsigned	brk_n_mtbs_assignable[MAX_BENCHES];
@@ -274,8 +274,13 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 		mATs[i] = 0;
 	}
 
-	mOTs = (volatile unsigned *)malloc(size * sizeof(unsigned));
-	mSTs = (volatile unsigned *)malloc(size * sizeof(unsigned));
+	mOTs = (volatile unsigned short *)malloc(size * sizeof(unsigned short));
+	mSTs = (volatile unsigned short *)malloc(size * sizeof(unsigned short));
+	if (mOTs == NULL || mSTs == NULL) {
+		printf("out of memory: offset or sync table cannot be allocated\n");
+		going_to_shutdown = TRUE;
+		goto out;
+	}
 	for (i = 0; i < size; i++) {
 		mOTs[i] = 0;
 		mSTs[i] = 0;
@@ -283,7 +288,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 
 	mtb_epochs = (volatile unsigned *)malloc(mTB_TOTAL_COUNT() * sizeof(unsigned));
 	if (mtb_epochs == NULL) {
-		printf("out of memory: epochs or offset table cannot be allocated\n");
+		printf("out of memory: epochs table cannot be allocated\n");
 		going_to_shutdown = TRUE;
 		goto out;
 	}
