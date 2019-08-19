@@ -36,7 +36,7 @@ AC_DEFUN([AX_CHECK_CUDA], [
 
 # Provide your CUDA path with this
 AC_ARG_WITH(cuda, [  --with-cuda=PREFIX      Prefix of your CUDA installation], [cuda_prefix=$withval], [cuda_prefix="/usr/local/cuda"])
-AC_ARG_WITH(sm, [  --with-gencode=GENCODE         GPU architecture/code], [cuda_gencode=$withval])
+AC_ARG_WITH(gencode, [  --with-gencode=GENCODE         GPU architecture/code], [cuda_gencode=$withval])
 
 # Setting the prefix to the default if only --with-cuda was given
 if test "$cuda_prefix" == "yes"; then
