@@ -6,7 +6,9 @@
 
 BENCHMARK(loopcalc)
 BENCHMARK(gma)
+BENCHMARK(kmeans)
 BENCH_COOKARG(gma)
+BENCH_COOKARG(kmeans)
 
 benchrun_t	benchruns[MAX_BENCHES];
 int	n_benches;
@@ -16,6 +18,7 @@ int	n_mtbs_submitted;
 static benchinfo_t	benchinfos[] = {
 	{ "lc", 1, NULL, bench_loopcalc_reloc, bench_loopcalc },
 	{ "gma", 2, cookarg_gma, bench_gma_reloc, bench_gma },
+	{ "kmeans", 3, cookarg_kmeans, bench_kmeans_reloc, bench_kmeans },
 	{ NULL, 0, NULL, NULL }
 };
 

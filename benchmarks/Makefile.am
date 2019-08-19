@@ -1,1 +1,1 @@
-SUBDIRS = inhouse
+SUBDIRS = inhouse kmeans

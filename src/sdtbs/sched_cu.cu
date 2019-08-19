@@ -1,6 +1,6 @@
 #include "sdtbs_cu.h"
 
-#define EPOCH_MAX		16
+#define EPOCH_MAX		256
 
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
 #define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
