@@ -25,6 +25,7 @@ usage(void)
 " <code>:\n"
 "  lc: repetitive calculation(in-house)\n"
 "  gma: global memory access(in-house)\n"
+"  lma: localized memory access(in-house)\n"
 "  kmeans: kmeans\n"
 " <arg string>:\n"
 "   NOTE: First 4 arguments are <grid width>,<grid height>,<tb width>,<tb height>\n"
@@ -33,6 +34,7 @@ usage(void)
 "                          4(float/double),5(int/float),6(int/double)\n"
 "                          7(float/double tb),8(int/float tb),9(int/double tb)\n"
 "   gma: <global mem in KB>,<stride for mem access>,<iterations>\n"
+"   lma: <chunk size in byte>,<reference span>,<iterations>\n"
 "   kmeans: <# of clusters>,<# of features>\n"
 		);
 }

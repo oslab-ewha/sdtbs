@@ -12,6 +12,7 @@ sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu fedkern.cu report.cu
 
 sdtbs_LDADD = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 		../../benchmarks/inhouse/gma/libgma.a \
+		../../benchmarks/inhouse/lma/liblma.a \
 		../../benchmarks/kmeans/libkmeans.a
 
 include $(top_srcdir)/makefile.cu

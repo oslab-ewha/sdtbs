@@ -12,6 +12,7 @@ __device__ BOOL	going_to_shutdown;
 
 __device__ int loopcalc(void *args[]);
 __device__ int gma(void *args[]);
+__device__ int lma(void *args[]);
 __device__ int kmeans(void *args[]);
 
 __device__ static int
@@ -23,6 +24,8 @@ run_bench(int skid, void *args[])
 	case 2:
 		return gma(args);
 	case 3:
+		return lma(args);
+	case 4:
 		return kmeans(args);
 	default:
 		return 0;

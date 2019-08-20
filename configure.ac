@@ -42,6 +42,7 @@ AC_CONFIG_FILES([Makefile
                  benchmarks/inhouse/Makefile
                  benchmarks/inhouse/loopcalc/Makefile
                  benchmarks/inhouse/gma/Makefile
+                 benchmarks/inhouse/lma/Makefile
                  benchmarks/kmeans/Makefile])
 
 AC_OUTPUT

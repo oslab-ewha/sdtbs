@@ -1,1 +1,1 @@
-SUBDIRS = loopcalc gma
+SUBDIRS = loopcalc gma lma
