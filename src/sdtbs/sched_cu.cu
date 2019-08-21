@@ -1,6 +1,6 @@
 #include "sdtbs_cu.h"
 
-#define EPOCH_MAX		128
+#define EPOCH_MAX		64
 
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
 #define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
@@ -211,7 +211,12 @@ advance_epoch(void)
 	if (IS_LEADER_THREAD()) {
 		EPOCH_MY(id_sm) = (EPOCH_MY(id_sm) + 1) % EPOCH_MAX;
 	}
+	__syncwarp();
 
+	/* clean up brk index if epoch is recycled */
+	if (IS_LEADER_THREAD() && EPOCH_MY(id_sm) == 0) {
+		BRK_INDEX_MY(id_sm) = 0;
+	}
 	__syncwarp();
 }
 
