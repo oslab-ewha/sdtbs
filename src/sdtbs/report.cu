@@ -13,7 +13,7 @@ report(unsigned elapsed)
 		printf("n threads per MTB: %u\n", n_threads_per_MTB);
 		printf("n MTBs per SM: %u\n", n_MTBs_per_sm);
 	}
-	printf("elapsed time: %.3lf\n", elapsed / 1000.0);
+	printf("elapsed time: %.6lf\n", elapsed / 1000000.0);
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
 		printf("%s: %d\n", brun->info->code, brun->res);
