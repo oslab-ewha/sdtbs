@@ -5,7 +5,6 @@
 #define FLT_MAX 3.40282347e+38
 
 typedef struct {
-	int	npoints;
 	int	*d_membership;
 	float	*d_clusters;
 	float	*d_features;
@@ -24,7 +23,7 @@ texture<float, 1, cudaReadModeElementType> t_clusters;
 __constant__ float c_clusters[ASSUMED_NR_CLUSTERS * 34];
 
 __device__ static void
-kmeansPoints(float *features, int nfeatures, int npoints, int nclusters, int *membership, float *clusters)
+kmeansPoints(float *features, int nfeatures, int npoints, int nclusters, int niters, int *membership, float *clusters)
 {
 	const unsigned	block_id = get_gridDimX() * get_blockIdxY() + get_blockIdxX();
 	// point/thread ID
@@ -32,22 +31,22 @@ kmeansPoints(float *features, int nfeatures, int npoints, int nclusters, int *me
 
 	int index = -1;
 
-	if (point_id < npoints) {
-		int	i, j;
-		float	min_dist = FLT_MAX;
-		float	dist; /* distance square between a point to cluster center */
+	int	i, j;
+	float	min_dist = FLT_MAX;
+	float	dist; /* distance square between a point to cluster center */
 
+	for (int k = 0; k < niters; k++) {
 		/* find the cluster center id with min distance to pt */
 		for (i = 0; i < nclusters; i++) {
-			 /* base index of cluster centers for inverted array */
+			/* base index of cluster centers for inverted array */
 			int	cluster_base_index = i * nfeatures;
-			 /* Euclidean distance sqaure */
+			/* Euclidean distance sqaure */
 			float	ans = 0.0;
 
 			for (j = 0; j < nfeatures; j++) {
-				 /* appropriate index of data point */
+				/* appropriate index of data point */
 				int addr = point_id + j * npoints;
-				 /* distance between a data point to cluster centers */
+				/* distance between a data point to cluster centers */
 				float diff = (tex1Dfetch(t_features, addr) - c_clusters[cluster_base_index + j]);
 				/* sum of squares */
 				ans += diff * diff;
@@ -63,7 +62,6 @@ kmeansPoints(float *features, int nfeatures, int npoints, int nclusters, int *me
 			}
 		}
 	}
-
 	if (point_id < npoints) {
 		/* assign the membership to object point_id */
 		membership[point_id] = index;
@@ -73,25 +71,27 @@ kmeansPoints(float *features, int nfeatures, int npoints, int nclusters, int *me
 __device__ int
 kmeans(void *args[])
 {
-	int     nclusters = (int)(long long)args[0];
-        int     nfeatures = (int)(long long)args[1];
-	kmeans_conf_t	*pkmc = (kmeans_conf_t *)args[2];
-
-	kmeansPoints(pkmc->d_features, nfeatures, pkmc->npoints, nclusters, pkmc->d_membership, pkmc->d_clusters);
+	int	npoints_per_thread = (int)(long long)args[0];
+	int     nclusters = (int)(long long)args[1];
+	int     nfeatures = (int)(long long)args[2];
+	int     niters = (int)(long long)args[3];
+	kmeans_conf_t	*pkmc = (kmeans_conf_t *)args[4];
+	int	npoints = npoints_per_thread * get_gridDimX() * get_gridDimY() * get_blockDimX() * get_blockDimY();
+	kmeansPoints(pkmc->d_features, nfeatures, npoints, nclusters, niters, pkmc->d_membership, pkmc->d_clusters);
 	return 0;
 }
 
 static void
-init_membership(kmeans_conf_t *pkmc)
+init_membership(int npoints, kmeans_conf_t *pkmc)
 {
 	int	*membership;
 	int	i;
 
-	membership = (int *)malloc(pkmc->npoints * sizeof(int));
-	for (i = 0; i < pkmc->npoints; i++)
+	membership = (int *)malloc(npoints * sizeof(int));
+	for (i = 0; i < npoints; i++)
 		membership[i] = -1;
-	cudaMalloc(&pkmc->d_membership, pkmc->npoints * sizeof(int));
-	cudaMemcpy(pkmc->d_membership, membership, pkmc->npoints * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMalloc(&pkmc->d_membership, npoints * sizeof(int));
+	cudaMemcpy(pkmc->d_membership, membership, npoints * sizeof(int), cudaMemcpyHostToDevice);
 	free(membership);
 }
 
@@ -108,31 +108,31 @@ invert_mapping(float *output, float *input, int npoints, int nfeatures)
 }
 
 static float *
-setup_features(kmeans_conf_t *pkmc, int nfeatures)
+setup_features(kmeans_conf_t *pkmc, int npoints, int nfeatures)
 {
 	float	*features, *features_inverted;
 	int	i;
 
-	features = (float *)malloc(pkmc->npoints * nfeatures * sizeof(float));
-	for (i = 0; i < pkmc->npoints * nfeatures; i++) {
+	features = (float *)malloc(npoints * nfeatures * sizeof(float));
+	for (i = 0; i < npoints * nfeatures; i++) {
 		features[i] = rand() / rand();
 	}
 
-	features_inverted = (float *)malloc(pkmc->npoints * nfeatures * sizeof(float));
-	invert_mapping(features_inverted, features, pkmc->npoints, nfeatures);
+	features_inverted = (float *)malloc(npoints * nfeatures * sizeof(float));
+	invert_mapping(features_inverted, features, npoints, nfeatures);
 
-	cudaMalloc(&pkmc->d_features, pkmc->npoints * nfeatures * sizeof(float));
-	cudaMemcpy(pkmc->d_features, features_inverted, pkmc->npoints * nfeatures * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMalloc(&pkmc->d_features, npoints * nfeatures * sizeof(float));
+	cudaMemcpy(pkmc->d_features, features_inverted, nfeatures * sizeof(float), cudaMemcpyHostToDevice);
 
-	cudaMalloc(&pkmc->d_features_flipped, pkmc->npoints * nfeatures * sizeof(float));
-	cudaMemcpy(pkmc->d_features_flipped, features, pkmc->npoints * nfeatures * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMalloc(&pkmc->d_features_flipped, nfeatures * sizeof(float));
+	cudaMemcpy(pkmc->d_features_flipped, features, nfeatures * sizeof(float), cudaMemcpyHostToDevice);
 
 	free(features_inverted);
 	return features;
 }
 
 static void
-setup_clusters(kmeans_conf_t *pkmc, float *features, int nclusters, int nfeatures)
+setup_clusters(kmeans_conf_t *pkmc, float *features, int npoints, int nclusters, int nfeatures)
 {
 	float	*clusters;
 	int	i;
@@ -145,7 +145,7 @@ setup_clusters(kmeans_conf_t *pkmc, float *features, int nclusters, int nfeature
 
 	/* randomly pick cluster centers */
 	for (i = 0; i < nclusters; i++) {
-		int	n = (int)rand() % pkmc->npoints;
+		int	n = (int)rand() % npoints;
 		int	j;
 		for (j = 0; j < nfeatures; j++) {
 			clusters[i * nfeatures + j] = features[n * nfeatures + j]; // remapped
@@ -158,17 +158,17 @@ setup_clusters(kmeans_conf_t *pkmc, float *features, int nclusters, int nfeature
 int
 cookarg_kmeans(dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	int	nclusters = (int)(long long)args[0];
-	int	nfeatures = (int)(long long)args[1];
+	int	npoints_per_thread = (int)(long long)args[0];
+	int	nclusters = (int)(long long)args[1];
+	int	nfeatures = (int)(long long)args[2];
+	int	npoints = npoints_per_thread * dimGrid.x * dimGrid.y * dimBlock.x * dimBlock.y;
 	kmeans_conf_t	kmc, *d_pkmc;
-	int	npoints = dimGrid.x * dimGrid.y * dimBlock.x * dimBlock.y;
 	float	*features;
 
-	kmc.npoints = npoints;
-	init_membership(&kmc);
+	init_membership(npoints, &kmc);
 
-	features = setup_features(&kmc, nfeatures);
-	setup_clusters(&kmc, features, nclusters, nfeatures);
+	features = setup_features(&kmc, npoints, nfeatures);
+	setup_clusters(&kmc, features, npoints, nclusters, nfeatures);
 
 	/* set up texture */
 	cudaChannelFormatDesc chDesc0 = cudaCreateChannelDesc<float>();
@@ -196,7 +196,7 @@ cookarg_kmeans(dim3 dimGrid, dim3 dimBlock, void *args[])
 
 	cudaMalloc(&d_pkmc, sizeof(kmeans_conf_t));
 	cudaMemcpy(d_pkmc, &kmc, sizeof(kmeans_conf_t), cudaMemcpyHostToDevice);
-	args[2] = d_pkmc;
+	args[4] = d_pkmc;
 
 	return 0;
 }

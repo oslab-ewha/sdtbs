@@ -35,7 +35,7 @@ usage(void)
 "                          7(float/double tb),8(int/float tb),9(int/double tb)\n"
 "   gma: <global mem in KB>,<stride for mem access>,<iterations>\n"
 "   lma: <chunk size in byte>,<reference span>,<iterations>\n"
-"   kmeans: <# of clusters>,<# of features>\n"
+"   kmeans: <# of points per thread>,<# of clusters>,<# of features>,<iterations>\n"
 		);
 }
 
