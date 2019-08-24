@@ -1,20 +1,14 @@
 #include "sdtbs_cu.h"
 
 extern sched_t	sched_hw;
-extern sched_t	sched_hwR;
 extern sched_t	sched_rr;
-extern sched_t	sched_rrS;
 extern sched_t	sched_rrf;
-extern sched_t	sched_rrfS;
 extern sched_t	sched_fca;
 extern sched_t	sched_rrm;
-extern sched_t	sched_rrmS;
 
 static sched_t	*all_sched[] = {
-	&sched_hw, &sched_hwR,
-	&sched_rr, &sched_rrS,
-	&sched_rrf, &sched_rrfS,
-	&sched_fca, &sched_rrm, &sched_rrmS, NULL
+	&sched_hw,
+	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, NULL
 };
 
 sched_t	*sched = &sched_hw;
@@ -40,12 +34,21 @@ setup_sched(const char *strpol)
 	for (i = 0; all_sched[i]; i++) {
 		int	len = strlen(all_sched[i]->name);
 
-		if (strncmp(strpol, all_sched[i]->name, len) == 0 &&
-		    (strpol[len] == '\0' || strpol[len] ==':')) {
-			if (strpol[len] == ':')
-				sched_argstr = strdup(strpol + len + 1);
+		if (strncmp(strpol, all_sched[i]->name, len) == 0) {
 			sched = all_sched[i];
 			sched_id = i + 1;
+			if (strpol[len] ==':')
+				sched_argstr = strdup(strpol + len + 1);
+			else if (strpol[len] == 'R' && strpol[len + 1] == '\0') {
+				sched->use_relocatable = TRUE;
+			}
+			else if (strpol[len] == 'S' && strpol[len + 1] == '\0') {
+				sched->use_static_sched = TRUE;
+			}
+			else if (strpol[len] != '\0') {
+				continue;
+			}
+			sched->name = strdup(strpol);
 			return;
 		}
 	}

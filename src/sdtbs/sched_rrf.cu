@@ -24,10 +24,3 @@ sched_t	sched_rrf = {
 	NULL,
 	get_tb_sm_rrf
 };
-
-sched_t	sched_rrfS = {
-	"rrfS",
-	FALSE, TRUE, FALSE,
-	NULL,
-	get_tb_sm_rrf
-};

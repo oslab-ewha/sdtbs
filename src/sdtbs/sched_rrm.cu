@@ -39,10 +39,3 @@ sched_t	sched_rrm = {
 	parse_arg_rrm,
 	get_tb_sm_rrm
 };
-
-sched_t	sched_rrmS = {
-	"rrmS",
-	FALSE, TRUE, FALSE,
-	parse_arg_rrm,
-	get_tb_sm_rrm
-};
