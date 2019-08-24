@@ -65,6 +65,7 @@ extern sched_t		*sched;
 extern benchrun_t	benchruns[MAX_BENCHES];
 
 __device__ uint get_smid(void);
+__device__ void sleep_in_kernel(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
 __device__ unsigned get_n_active_mtbs(unsigned id_sm);
 

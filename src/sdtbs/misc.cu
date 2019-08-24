@@ -1,3 +1,5 @@
+#include "../../config.h"
+
 #include "sdtbs.h"
 
 #include <sys/times.h>
@@ -17,6 +19,14 @@ get_smid(void)
 	uint	ret;
 	asm("mov.u32 %0, %smid;" : "=r"(ret));
 	return ret;
+}
+
+__device__ void
+sleep_in_kernel(void)
+{
+#if CUDA_COMPUTE >= 70
+	asm("nanosleep.u32 1;");
+#endif
 }
 
 extern "C" BOOL

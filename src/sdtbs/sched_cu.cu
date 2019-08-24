@@ -264,10 +264,10 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	int	i;
 
 	if (blockIdx.x != 0 || blockIdx.y != 0) {
-		for (i = 0;; i++) {
-			for (int j = 0; j < 10000000; j++)
-				if (initialized)
-					return;
+		while (TRUE) {
+			if (initialized)
+				return;
+			sleep_in_kernel();
 		}
 	}
 
