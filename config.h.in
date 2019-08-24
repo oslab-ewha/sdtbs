@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* GPU micro rchitecture */
+#undef CUDA_COMPUTE
+
 /* defined if cuda.h is found. */
 #undef HAVE_CUDA_H
 

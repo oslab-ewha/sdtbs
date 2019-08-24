@@ -36,7 +36,7 @@ AC_DEFUN([AX_CHECK_CUDA], [
 
 # Provide your CUDA path with this
 AC_ARG_WITH(cuda, [  --with-cuda=PREFIX      Prefix of your CUDA installation], [cuda_prefix=$withval], [cuda_prefix="/usr/local/cuda"])
-AC_ARG_WITH(gencode, [  --with-gencode=GENCODE         GPU architecture/code], [cuda_gencode=$withval])
+AC_ARG_WITH(microarch, [  --with-microarch=<arch name>         GPU micro architecture name: pascal, volta], [cuda_microarch=$withval])
 
 # Setting the prefix to the default if only --with-cuda was given
 if test "$cuda_prefix" == "yes"; then
@@ -45,8 +45,20 @@ if test "$cuda_prefix" == "yes"; then
 	fi
 fi
 
-if test -n "$cuda_gencode"; then
-	CUDA_GENCODE="-gencode $cuda_gencode"
+if test -n "$cuda_microarch"; then
+	case $cuda_microarch in
+		pascal)
+		NVCC_ARCHITECTURE="--gpu-architecture compute_61"
+		AC_DEFINE([CUDA_COMPUTE], [61], [GPU micro rchitecture])
+		;;
+		volta)
+		NVCC_ARCHITECTURE="--gpu-architecture compute_70"
+		AC_DEFINE([CUDA_COMPUTE], [70])
+		;;
+		*)
+		AC_MSG_ERROR([invalid micro architecture: $cuda_microarch], 1)
+		;;
+	esac
 fi
 
 # Checking for nvcc
@@ -69,18 +81,17 @@ ax_save_LDFLAGS="${LDFLAGS}"
 ax_save_LIBS="${LIBS}"
 
 # Announcing the new variables
-AC_SUBST([CUDA_CPPFLAGS])
-AC_SUBST([CUDA_LDFLAGS])
+AC_SUBST([NVCC_CPPFLAGS])
+AC_SUBST([NVCC_LDFLAGS])
 AC_SUBST([CUDA_LIBS])
-AC_SUBST([CUDA_GENCODE])
+AC_SUBST([NVCC_ARCHITECTURE])
 
-CUDA_CPPFLAGS="-I$cuda_prefix/include $CUDA_CPPFLAGS"
-CPPFLAGS="$CUDA_CPPFLAGS $CPPFLAGS"
-CUDA_LDFLAGS="-L$cuda_prefix/lib64 -L$cuda_prefix/lib64/stubs $CUDA_LDFLAGS"
-LDFLAGS="$CUDA_LDFLAGS $LDFLAGS"
+NVCC_CPPFLAGS="-I$cuda_prefix/include $NVCC_CPPFLAGS"
+CPPFLAGS="$NVCC_CPPFLAGS $CPPFLAGS"
+NVCC_LDFLAGS="-L$cuda_prefix/lib64 -L$cuda_prefix/lib64/stubs $NVCC_LDFLAGS"
+LDFLAGS="$NVCC_LDFLAGS $LDFLAGS"
 CUDA_LIBS="-lcuda -lcudart $CUDA_LIBS"
 LIBS="$CUDA_LIBS $LIBS"
-CUDA_GENCODE="$CUDA_GENCODE"
 
 #CUDA_LIBS= # the libs we specify manually for each target
 

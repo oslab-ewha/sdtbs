@@ -180,9 +180,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CUDA_CPPFLAGS = @CUDA_CPPFLAGS@
-CUDA_GENCODE = @CUDA_GENCODE@
-CUDA_LDFLAGS = @CUDA_LDFLAGS@
 CUDA_LIBS = @CUDA_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -208,6 +205,9 @@ LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
+NVCC_ARCHITECTURE = @NVCC_ARCHITECTURE@
+NVCC_CPPFLAGS = @NVCC_CPPFLAGS@
+NVCC_LDFLAGS = @NVCC_LDFLAGS@
 NVCC_PATH = @NVCC_PATH@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
@@ -269,7 +269,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 CLEANFILES = *~
 DISTCLEANFILES = *~
-LINK = @NVCC_PATH@ @CUDA_GENCODE@ -o $@
+LINK = @NVCC_PATH@ @NVCC_ARCHITECTURE@ -o $@
 sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu fedkern.cu report.cu misc.cu sdtbs.h sdtbs_cu.h \
 	benchapi.cu \
 	sched.cu sched_rr.cu sched_rrf.cu sched_fca.cu sched_rrm.cu \
@@ -592,7 +592,7 @@ uninstall-am: uninstall-binPROGRAMS
 .PRECIOUS: Makefile
 
 .cu.o:
-	@NVCC_PATH@ -dc $(AM_CPPFLAGS) --maxrregcount 32 @CUDA_CPPFLAGS@ @CUDA_GENCODE@ $< -o $@
+	@NVCC_PATH@ -dc $(AM_CPPFLAGS) --maxrregcount 32 @NVCC_CPPFLAGS@ @NVCC_ARCHITECTURE@ $< -o $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
