@@ -36,6 +36,8 @@ typedef struct {
 	unsigned	n_max_mtbs_per_MTB;
 	unsigned	n_mtbs;
 	unsigned	n_tbs;
+	BOOL		initialized;
+	BOOL		fully_dynamic;
 	unsigned char	brids[0];
 } fedkern_info_t;
 
@@ -56,7 +58,7 @@ typedef struct {
 
 typedef struct {
 	const char	*name;
-	BOOL		direct_mode, use_static_sched, use_relocatable;
+	BOOL		direct_mode, use_semi_dynamic_sched, use_static_sched, use_relocatable;
 	void *(*parse_arg)(const char *argstr);
 	unsigned (*get_tb_sm)(dim3 dimBlock, unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
@@ -76,6 +78,7 @@ BOOL is_sm_avail(int id_sm, unsigned n_threads);
 unsigned get_sm_n_sched_mtbs(int id_sm);
 
 BOOL run_schedule(fedkern_info_t *kfinfo);
+void run_schedule_dyn(fedkern_info_t *d_kfinfo);
 
 void init_tickcount(void);
 unsigned long long get_tickcount(void);

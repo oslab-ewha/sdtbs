@@ -37,7 +37,6 @@
 
 extern __device__ BOOL	going_to_shutdown;
 
-__device__ static volatile int	initialized;
 __device__ static volatile int	in_scheduling;
 __device__ static fedkern_info_t	*d_fkinfo;
 
@@ -76,6 +75,23 @@ unlock_scheduling(void)
 	in_scheduling = 0;
 }
 
+static __device__ unsigned char
+get_sched_brid(void)
+{
+	if (d_fkinfo->fully_dynamic) {
+		while (TRUE) {
+			unsigned char	brid;
+			brid = *(volatile unsigned char *)(d_fkinfo->brids + n_tbs_assignable);
+			if (brid != 0)
+				return brid;
+			sleep_in_kernel();
+		}
+	}
+	else {
+		return d_fkinfo->brids[n_tbs_assignable];
+	}
+}
+
 static __device__ void
 run_schedule_in_kernel(void)
 {
@@ -93,7 +109,8 @@ run_schedule_in_kernel(void)
 		return;
 	}
 
-	brid = d_fkinfo->brids[n_tbs_assignable];
+	brid = get_sched_brid();
+
 	brk = &d_fkinfo->bruns[brid - 1];
 
 	switch (d_fkinfo->sched_id) {
@@ -265,7 +282,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 
 	if (blockIdx.x != 0 || blockIdx.y != 0) {
 		while (TRUE) {
-			if (initialized)
+			if (*(volatile BOOL *)&_fkinfo->initialized)
 				return;
 			sleep_in_kernel();
 		}
@@ -302,5 +319,5 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	}
 
 out:
-	initialized = 1;
+	d_fkinfo->initialized = TRUE;
 }

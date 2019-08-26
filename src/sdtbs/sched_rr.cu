@@ -16,14 +16,14 @@ get_tb_sm_rr(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rr = {
 	"rr",
-	FALSE, FALSE, FALSE,
+	FALSE, FALSE, FALSE, FALSE,
 	NULL,
 	get_tb_sm_rr
 };
 
 sched_t	sched_hw = {
 	"hw",
-	TRUE, FALSE, FALSE,
+	TRUE, FALSE, FALSE, FALSE,
 	NULL,
 	NULL,
 };

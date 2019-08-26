@@ -2,6 +2,8 @@
 
 extern void init_sched(void);
 
+extern void wait_fedkern_initialized(fedkern_info_t *d_fkinfo);
+
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch(void);
@@ -92,20 +94,30 @@ kernel_macro_TB(fedkern_info_t *fkinfo)
 }
 
 static BOOL
-launch_macro_TB(fedkern_info_t *fkinfo)
+launch_macro_TB(fedkern_info_t *d_fkinfo)
 {
+	cudaStream_t	strm;
 	cudaError_t	err;
 
 	dim3 dimGrid(n_sm_count, n_MTBs_per_sm);
 	dim3 dimBlock(n_threads_per_MTB, 1);
 
-	kernel_macro_TB<<<dimGrid, dimBlock, 0>>>(fkinfo);
+	cudaStreamCreate(&strm);
+	kernel_macro_TB<<<dimGrid, dimBlock, 0, strm>>>(d_fkinfo);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		error("kernel launch error: %s\n", cudaGetErrorString(err));
 		return FALSE;
 	}
+
+	if (!sched->use_static_sched)
+		wait_fedkern_initialized(d_fkinfo);
+
+	init_tickcount();
+
+	if (!sched->use_semi_dynamic_sched && !sched->use_static_sched)
+		run_schedule_dyn(d_fkinfo);
 
 	cudaDeviceSynchronize();
 	return TRUE;
@@ -142,8 +154,6 @@ run_sd_tbs(unsigned *pticks)
 		return FALSE;
 
 	cudaMemcpy(d_fkinfo, fkinfo, fkinfo->size, cudaMemcpyHostToDevice);
-
-	init_tickcount();
 
 	if (!launch_macro_TB(d_fkinfo))
 		return FALSE;

@@ -14,7 +14,7 @@ SDTBS=${SDTBS:-src/sdtbs/sdtbs}
 SDTBS_ARGS=${SDTBS_ARGS}
 
 n_sms=1
-policies="hw,hwR,rr,rrS,rrf,rrfS,fca,rrm:64,rrmS:64"
+policies="hw,hwR,rr,rrD,rrS"
 n_tbs_per_sm="1,2,3,4"
 n_ths_per_tb="32,64,128,256,512,1024"
 while getopts "s:p:n:t:" arg

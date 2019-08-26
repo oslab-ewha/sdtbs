@@ -20,8 +20,6 @@ run_native_tbs(unsigned *pticks)
 		cudaMemcpy((char *)d_args_brun + SIZE_ARGS * i, brun->args, SIZE_ARGS, cudaMemcpyHostToDevice);
 	}
 
-	init_tickcount();
-
 	for (i = 0, brun = benchruns; i < n_benches; i++, brun++) {
 		bench_func_t	bench;
 		cudaError_t	err;
@@ -34,6 +32,8 @@ run_native_tbs(unsigned *pticks)
 			return FALSE;
 		}
 	}
+
+	init_tickcount();
 
 	for (i = 0; i < n_benches; i++)
 		cudaStreamSynchronize(strms[i]);

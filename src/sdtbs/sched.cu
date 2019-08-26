@@ -24,7 +24,9 @@ static unsigned n_cur_mtbs;
 extern BOOL run_native_tbs(unsigned *pticks);
 extern BOOL run_sd_tbs(unsigned *pticks);
 
+extern void assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char brid);
 extern void assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid);
+extern void assign_fedkern_brid_dyn(fedkern_info_t *d_fkinfo, unsigned char brid);
 
 extern "C" void
 setup_sched(const char *strpol)
@@ -39,6 +41,9 @@ setup_sched(const char *strpol)
 			sched_id = i + 1;
 			if (strpol[len] ==':')
 				sched_argstr = strdup(strpol + len + 1);
+			else if (strpol[len] == 'D' && strpol[len + 1] == '\0') {
+				sched->use_semi_dynamic_sched = TRUE;
+			}
 			else if (strpol[len] == 'R' && strpol[len + 1] == '\0') {
 				sched->use_relocatable = TRUE;
 			}
@@ -102,15 +107,7 @@ sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, uns
 static void
 sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 {
-	benchrun_k_t	*brk;
 	int	i, j;
-
-	brk = &fkinfo->bruns[brid - 1];
-	brk->skid = brun->info->skid;
-	memcpy(brk->args, brun->args, sizeof(void *) * MAX_ARGS);
-	brk->dimGrid = brun->dimGrid;
-	brk->dimBlock = brun->dimBlock;
-	brk->n_mtbs_per_tb = brun->dimBlock.x * brun->dimBlock.y / N_THREADS_PER_mTB;
 
 	for (i = 0; i < brun->dimGrid.y; i++) {
 		for (j = 0; j < brun->dimGrid.x; j++) {
@@ -146,12 +143,31 @@ run_schedule(fedkern_info_t *fkinfo)
 		fkinfo->sched_arg = sched->parse_arg(sched_argstr);
 	}
 
+	if (!sched->use_semi_dynamic_sched && !sched->use_static_sched)
+		fkinfo->fully_dynamic = TRUE;
+
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
-		sched_brun(fkinfo, brun, i + 1);
+		assign_fedkern_brun(fkinfo, brun, i + 1);
+		if (sched->use_semi_dynamic_sched || sched->use_static_sched)
+			sched_brun(fkinfo, brun, i + 1);
 	}
 
 	return TRUE;
+}
+
+void
+run_schedule_dyn(fedkern_info_t *d_fkinfo)
+{
+	benchrun_t	*brun;
+	int	i, j;
+
+	brun = benchruns;
+	for (i = 0; i < n_benches; i++, brun++) {
+		for (j = 0; j < brun->dimGrid.y * brun->dimGrid.x; j++) {
+			assign_fedkern_brid_dyn(d_fkinfo, i + 1);
+		}
+	}
 }
 
 BOOL

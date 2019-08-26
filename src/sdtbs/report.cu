@@ -6,7 +6,8 @@ report(unsigned elapsed)
 	benchrun_t	*brun;
 	int	i;
 
-	printf("tbs type: %s\n", sched->direct_mode ? (sched->use_relocatable ? "native(relocatable)": "native") : sched->use_static_sched ? "sd(static)": "sd(dynamic)");
+	printf("tbs type: %s\n", sched->direct_mode ? (sched->use_relocatable ? "native(relocatable)": "native") :
+	       sched->use_static_sched ? "sd(static)": sched->use_semi_dynamic_sched ? "sd(semi-dynamic)": "sd(dynamic)");
 	printf("policy: %s\n", sched->name);
 	if (!sched->direct_mode) {
 		printf("sm count: %u\n", n_sm_count);
