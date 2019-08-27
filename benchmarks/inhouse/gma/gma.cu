@@ -14,15 +14,13 @@ gma(void *args[])
 	unsigned	memidx_max = gmemsize * 1024;
 	unsigned	memidx;
 	int	value = 0;
-	int	i, j;
+	int	i;
 
 	memidx = (unsigned)(clock() * 19239913 * get_threadIdxX()) % memidx_max;
-	for (i = 0; i < n_iters; i++) {
-		for (j = 0; j < 10000; j ++, memidx += stride) {
-			if (memidx >= memidx_max)
-				memidx -= memidx_max;
-			value += (gmem[memidx] + gmem[memidx + stride / 2] + gmem[memidx + stride / 4]);
-		}
+	for (i = 0; i < n_iters; i++, memidx += stride) {
+		if (memidx >= memidx_max)
+			memidx -= memidx_max;
+		value += (gmem[memidx] + gmem[memidx + stride / 2] + gmem[memidx + stride / 4]);
 	}
 	return value;
 }

@@ -25,7 +25,7 @@ lma(void *args[])
 	unsigned	n_chunks = get_gridDimX() * get_gridDimY();
 	unsigned	randx;
 	int	value = 0;
-	int	i, j;
+	int	i;
 
 	chunk_start = chunk_idx - refspan;
 	if (chunk_start < 0)
@@ -33,14 +33,11 @@ lma(void *args[])
 
 	randx = 0x12345678 + clock() * 19239913 * get_threadIdxX();
 	for (i = 0; i < n_iters; i++) {
-		for (j = 0; j < 10000; j++) {
-			unsigned	rand_chunk_idx = (chunk_start + randx % (1 + 2 * refspan)) % n_chunks;
+		unsigned	rand_chunk_idx = (chunk_start + randx % (1 + 2 * refspan)) % n_chunks;
 
-			randx = rand_xorshift(randx);
-			value += chunks[rand_chunk_idx][randx % chunksize];
-			randx = rand_xorshift(randx);
-
-		}
+		randx = rand_xorshift(randx);
+		value += chunks[rand_chunk_idx][randx % chunksize];
+		randx = rand_xorshift(randx);
 	}
 	return value;
 }

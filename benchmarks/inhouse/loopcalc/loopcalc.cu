@@ -30,11 +30,7 @@ calc_int(int n_iters)
 	int     i;
 
         for (i = 0; i < n_iters; i++) {
-		int	j;
-
-		for (j = 0; j < 100000; j++) {
-			value = value * 1923192273 + 3921192123;
-		}
+		value = value * 1923192273 + 3921192123;
         }
         return value;
 }
@@ -46,14 +42,10 @@ calc_float(int n_iters)
 	int     i;
 
         for (i = 0; i < n_iters; i++) {
-		int	j;
-
-		for (j = 0; j < 10000; j++) {
-			if (value == CUDART_INF_F)
-				value = 9.99f;
-			else
-				value = value * 2911.2123f + 1.992813f;
-		}
+		if (value == CUDART_INF_F)
+			value = 9.99f;
+		else
+			value = value * 2911.2123f + 1.992813f;
         }
         return value;
 }
@@ -65,14 +57,10 @@ calc_double(int n_iters)
 	int	i;
 
 	for (i = 0; i < n_iters; i++) {
-		int	j;
-
-		for (j = 0; j < 10000; j++) {
-			if (value == CUDART_INF_F)
-				value = 329.99128493;
-			else
-				value = value * 2911.2134324 + 1.992812932;
-		}
+		if (value == CUDART_INF_F)
+			value = 329.99128493;
+		else
+			value = value * 2911.2134324 + 1.992812932;
 	}
 	return value;
 }
