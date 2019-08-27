@@ -3,6 +3,7 @@
 function usage() {
     cat <<EOF
 Usage: run.sh [options] <benchmark code:bench args only>...
+ -c <# of tests>, default: 1
  -s <# of SM>, default: 1
  -p <policies>: hw,hwR,rr,rrS,rrf,rrfS,fca,rrm:64,rrmS:64
  -n <tbs per SM>, default: 1,2,3,4
@@ -13,13 +14,17 @@ EOF
 SDTBS=${SDTBS:-src/sdtbs/sdtbs}
 SDTBS_ARGS=${SDTBS_ARGS}
 
+n_tests=1
 n_sms=1
 policies="hw,hwR,rr,rrD,rrS"
 n_tbs_per_sm="1,2,3,4"
 n_ths_per_tb="32,64,128,256,512,1024"
-while getopts "s:p:n:t:" arg
+while getopts "c:s:p:n:t:" arg
 do
     case $arg in
+	c)
+	    n_tests=$OPTARG
+	    ;;
 	s)
 	    n_sms=$OPTARG
 	    ;;
@@ -46,12 +51,19 @@ if [ $# -eq 0 ]; then
 fi
 
 function get_elapsed_time() {
-    str=`$SDTBS $SDTBS_ARGS $* 2> /dev/null | grep "^elapsed time:" | grep -Ewo '[[:digit:]]*\.[[:digit:]]*'`
-    if [ $? -ne 0 ]; then
-	echo -n "-"
-    else
-	echo -n $str
-    fi
+    sum=0
+    for i in `seq 1 $n_tests`
+    do
+	str=`$SDTBS $SDTBS_ARGS $* 2> /dev/null | grep "^elapsed time:" | grep -Ewo '[[:digit:]]*\.[[:digit:]]*'`
+	if [ $? -ne 0 ]; then
+	    echo -n "-"
+	    return
+	else
+	    sum=`echo "scale=6;$sum + $str" | bc`
+	fi
+    done
+    value=`echo "scale=6;$sum / $n_tests" | bc`
+    echo -n $value
 }
 
 function run_sdtbs() {
