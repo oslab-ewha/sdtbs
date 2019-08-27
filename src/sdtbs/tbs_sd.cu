@@ -4,11 +4,11 @@ extern void init_sched(void);
 
 extern void wait_fedkern_initialized(fedkern_info_t *d_fkinfo);
 
+extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
+extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch(void);
-
-extern __device__ BOOL	static_sched;
 
 __device__ BOOL	going_to_shutdown;
 
@@ -39,21 +39,23 @@ kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
 {
 	benchrun_k_t	*brk;
 	unsigned char	brid;
-	int	idx;
+	BOOL	is_primary_mtb;
 	int	res;
 
-	static_sched = TRUE;
+	if (threadIdx.x == 0 && threadIdx.y == 0) {
+		setup_static_sched(fkinfo);
+	}
+	__syncthreads();
 
-	idx = get_smid() * fkinfo->n_max_mtbs_per_sm + fkinfo->n_max_mtbs_per_MTB * blockIdx.y + threadIdx.x / N_THREADS_PER_mTB;
-
-	brid = fkinfo->brids[idx];
+	brid = get_brid_static(&is_primary_mtb);
 	if (brid == 0)
 		return;
+
 	brk = &fkinfo->bruns[brid - 1];
 
 	res = run_bench(brk->skid, brk->args);
 
-	if (brk->primary_mtb_idx == idx + 1 && threadIdx.x % N_THREADS_PER_mTB == 0) {
+	if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
 		brk->res = res;
 	}
 }
@@ -139,6 +141,7 @@ run_sd_tbs(unsigned *pticks)
 {
 	fedkern_info_t	*fkinfo;
 	fedkern_info_t	*d_fkinfo;
+	unsigned short	*d_offsets = NULL;
 
 	if (!setup_gpu_devinfo()) {
 		error("no gpu found");
@@ -153,6 +156,12 @@ run_sd_tbs(unsigned *pticks)
 	if (!run_schedule(fkinfo))
 		return FALSE;
 
+	if (sched->use_static_sched) {
+		cudaMalloc(&d_offsets, fkinfo->n_mtbs * sizeof(unsigned short));
+		cudaMemcpy(d_offsets, fkinfo->offsets, fkinfo->n_mtbs * sizeof(unsigned short), cudaMemcpyHostToDevice);
+		free(fkinfo->offsets);
+		fkinfo->offsets = d_offsets;
+	}
 	cudaMemcpy(d_fkinfo, fkinfo, fkinfo->size, cudaMemcpyHostToDevice);
 
 	if (!launch_macro_TB(d_fkinfo))
@@ -163,6 +172,8 @@ run_sd_tbs(unsigned *pticks)
 	cudaMemcpy(fkinfo, d_fkinfo, fkinfo->size, cudaMemcpyDeviceToHost);
 	collect_results(fkinfo);
 
+	if (d_offsets != NULL)
+		cudaFree(d_offsets);
 	cudaFree(d_fkinfo);
 
 	return TRUE;

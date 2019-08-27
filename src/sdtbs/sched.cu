@@ -69,37 +69,45 @@ init_sched(void)
 }
 
 static BOOL
-assign_brid(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
+assign_brid_static(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid, unsigned short offset)
 {
-	if (sched->use_static_sched) {
-		unsigned	idx;
+	unsigned	idx;
 
-		if (n_cur_mtbs_per_sm[id_sm - 1] == n_max_mtbs_per_sm)
-			return FALSE;
-		idx = (id_sm - 1) * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm - 1];
-		fkinfo->brids[idx] = brid;
-		n_cur_mtbs_per_sm[id_sm - 1]++;
-		if (fkinfo->bruns[brid - 1].primary_mtb_idx == 0)
-			fkinfo->bruns[brid - 1].primary_mtb_idx = n_cur_mtbs + 1;
-	}
-	else {
-		fkinfo->brids[n_cur_mtbs] = brid;
-	}
+	if (n_cur_mtbs_per_sm[id_sm - 1] == n_max_mtbs_per_sm)
+		return FALSE;
+	idx = (id_sm - 1) * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm - 1];
+	fkinfo->brids[idx] = brid;
+	fkinfo->offsets[idx] = offset;
+	n_cur_mtbs_per_sm[id_sm - 1]++;
+	if (fkinfo->bruns[brid - 1].primary_mtb_idx == 0)
+		fkinfo->bruns[brid - 1].primary_mtb_idx = n_cur_mtbs + 1;
 	n_cur_mtbs++;
 
 	return TRUE;
 }
 
 static void
-sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, unsigned id_sm)
+assign_brid_dynamic(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
+{
+	fkinfo->brids[n_cur_mtbs] = brid;
+	n_cur_mtbs++;
+}
+
+static void
+sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, unsigned id_sm, unsigned short *poffset)
 {
 	int	i;
 
 	ASSERT(brun->dimBlock.x % N_THREADS_PER_mTB == 0);
 
-	for (i = 0; i < brun->dimBlock.x * brun->dimBlock.y; i += N_THREADS_PER_mTB) {
-		if (!assign_brid(fkinfo, id_sm, brid)) {
-			FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
+	for (i = 0; i < brun->dimBlock.x * brun->dimBlock.y; i += N_THREADS_PER_mTB, (*poffset)++) {
+		if (sched->use_static_sched) {
+			if (!assign_brid_static(fkinfo, id_sm, brid, *poffset)) {
+				FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
+			}
+		}
+		else {
+			assign_brid_dynamic(fkinfo, id_sm, brid);
 		}
 	}
 }
@@ -107,6 +115,7 @@ sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, uns
 static void
 sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 {
+	unsigned short	offset = 0;
 	int	i, j;
 
 	for (i = 0; i < brun->dimGrid.y; i++) {
@@ -116,7 +125,7 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 				if (id_sm == 0) {
 					FATAL(3, "schedule failed");
 				}
-				sched_micro_tb(fkinfo, brun, brid, id_sm);
+				sched_micro_tb(fkinfo, brun, brid, id_sm, &offset);
 			}
 			else {
 				assign_fedkern_brid(fkinfo, brid);

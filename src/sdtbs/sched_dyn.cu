@@ -238,7 +238,7 @@ advance_epoch(void)
 }
 
 __device__ benchrun_k_t *
-get_brk(void)
+get_brk_dyn(void)
 {
 	unsigned	id_sm = get_smid() + 1;
 	unsigned	brid = BRK_INDEX_MY(id_sm);
@@ -247,7 +247,7 @@ get_brk(void)
 }
 
 __device__ unsigned
-get_offset_TB(void)
+get_offset_TB_dyn(void)
 {
 	unsigned	id_sm = get_smid() + 1;
 
@@ -258,11 +258,11 @@ __device__ void
 sync_TB_threads(void)
 {
 	if (IS_LEADER_THREAD()) {
-		benchrun_k_t	*brk = get_brk();
+		benchrun_k_t	*brk = get_brk_dyn();
 
 		if (brk->n_mtbs_per_tb > 1) {
 			unsigned	id_sm = get_smid() + 1;
-			unsigned	offset = get_offset_TB();
+			unsigned	offset = get_offset_TB_dyn();
 			int		idx_sync = mTB_INDEX_MY(id_sm) - offset;
 
 			atomicInc((unsigned *)&mTB_SYNC(id_sm, idx_sync), brk->n_mtbs_per_tb - 1);

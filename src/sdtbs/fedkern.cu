@@ -27,6 +27,11 @@ setup_fedkern_info(void)
 	fkinfo->n_max_mtbs_per_MTB = n_max_mtbs_per_sm / n_MTBs_per_sm;
 	fkinfo->n_tbs = n_tbs_submitted;
 
+	if (sched->use_static_sched)
+		fkinfo->offsets = (unsigned short *)calloc(1, n_max_mtbs * sizeof(unsigned short));
+	else
+		fkinfo->offsets = NULL;
+
 	return fkinfo;
 }
 

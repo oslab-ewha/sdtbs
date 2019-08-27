@@ -38,6 +38,8 @@ typedef struct {
 	unsigned	n_tbs;
 	BOOL		initialized;
 	BOOL		fully_dynamic;
+	/* mtb offset table(for static schedule only)*/
+	unsigned short	*offsets;
 	unsigned char	brids[0];
 } fedkern_info_t;
 
