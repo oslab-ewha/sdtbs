@@ -3,6 +3,8 @@
 
 extern __device__ int	native_mode;
 
+__device__ unsigned get_random(unsigned randx);
+
 __device__ int get_gridDimX(void);
 __device__ int get_gridDimY(void);
 __device__ int get_blockIdxX(void);

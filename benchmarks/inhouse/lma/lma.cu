@@ -4,15 +4,6 @@
 
 #include "../../benchapi.h"
 
-__device__ static unsigned
-rand_xorshift(unsigned seed)
-{
-	seed ^= (seed << 13);
-	seed ^= (seed >> 17);
-	seed ^= (seed << 5);
-	return seed;
-}
-
 __device__ int
 lma(void *args[])
 {
@@ -35,9 +26,9 @@ lma(void *args[])
 	for (i = 0; i < n_iters; i++) {
 		unsigned	rand_chunk_idx = (chunk_start + randx % (1 + 2 * refspan)) % n_chunks;
 
-		randx = rand_xorshift(randx);
+		randx = get_random(randx);
 		value += chunks[rand_chunk_idx][randx % chunksize];
-		randx = rand_xorshift(randx);
+		randx = get_random(randx);
 	}
 	return value;
 }

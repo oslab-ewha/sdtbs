@@ -11,6 +11,15 @@ __device__ int	native_mode;
 
 extern __device__ BOOL	static_sched;
 
+__device__ unsigned
+get_random(unsigned randx)
+{
+	randx ^= (randx << 13);
+	randx ^= (randx >> 17);
+	randx ^= (randx << 5);
+	return randx;
+}
+
 __device__ int
 get_gridDimX(void)
 {
