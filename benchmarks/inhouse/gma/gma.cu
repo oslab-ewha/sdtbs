@@ -8,19 +8,18 @@ __device__ int
 gma(void *args[])
 {
 	int	gmemsize = (int)(long long)args[0];
-	int	stride = (int)(long long)args[1];
-	int	n_iters = (int)(long long)args[2];
-	unsigned char	*gmem = (unsigned char *)args[3];
+	int	n_iters = (int)(long long)args[1];
+	unsigned char	*gmem = (unsigned char *)args[2];
 	unsigned	memidx_max = gmemsize * 1024;
-	unsigned	memidx;
+	unsigned	randx;
 	int	value = 0;
 	int	i;
 
-	memidx = (unsigned)(clock() * 19239913 * get_threadIdxX()) % memidx_max;
-	for (i = 0; i < n_iters; i++, memidx += stride) {
-		if (memidx >= memidx_max)
-			memidx -= memidx_max;
-		value += (gmem[memidx] + gmem[memidx + stride / 2] + gmem[memidx + stride / 4]);
+	randx = 0x12345678 + clock() * 19239913 * get_threadIdxX();
+	for (i = 0; i < n_iters; i++) {
+		unsigned	memidx = randx % memidx_max;
+		value += gmem[memidx];
+		randx = get_random(randx);
 	}
 	return value;
 }
@@ -45,7 +44,7 @@ cookarg_gma(dim3 dimGrid, dim3 dimBlock, void *args[])
 	for (i = 0; i < gmemsize; i++) {
 		cudaMemcpy(gmem + i * 1024, buf, 1024, cudaMemcpyHostToDevice);
 	}
-	args[3] = gmem;
+	args[2] = gmem;
 	return 0;
 }
 
