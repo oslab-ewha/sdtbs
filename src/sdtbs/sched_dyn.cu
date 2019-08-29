@@ -79,13 +79,14 @@ static __device__ unsigned char
 get_sched_brid(void)
 {
 	if (d_fkinfo->fully_dynamic) {
-		while (TRUE) {
+		while (!IS_SCHEDULE_DONE()) {
 			unsigned char	brid;
 			brid = *(volatile unsigned char *)(d_fkinfo->brids + n_tbs_assignable);
 			if (brid != 0)
 				return brid;
 			sleep_in_kernel();
 		}
+		return 0;
 	}
 	else {
 		return d_fkinfo->brids[n_tbs_assignable];
@@ -110,7 +111,10 @@ run_schedule_in_kernel(void)
 	}
 
 	brid = get_sched_brid();
-
+	if (brid == 0) {
+		unlock_scheduling();
+		return;
+	}
 	brk = &d_fkinfo->bruns[brid - 1];
 
 	switch (d_fkinfo->sched_id) {
