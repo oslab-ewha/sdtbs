@@ -8,7 +8,8 @@ extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
 extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
-extern __device__ void advance_epoch(void);
+extern __device__ void advance_epoch_static(void);
+extern __device__ void advance_epoch_dyn(void);
 
 __device__ BOOL	going_to_shutdown;
 
@@ -37,26 +38,29 @@ run_bench(int skid, void *args[])
 static __device__ void
 kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
 {
-	benchrun_k_t	*brk;
-	unsigned char	brid;
-	BOOL	is_primary_mtb;
-	int	res;
-
 	if (threadIdx.x == 0 && threadIdx.y == 0) {
 		setup_static_sched(fkinfo);
 	}
 	__syncthreads();
 
-	brid = get_brid_static(&is_primary_mtb);
-	if (brid == 0)
-		return;
+	while (!going_to_shutdown) {
+		unsigned char	brid;
+		benchrun_k_t	*brk;
+		BOOL	is_primary_mtb;
+		int	res;
 
-	brk = &fkinfo->bruns[brid - 1];
+		brid = get_brid_static(&is_primary_mtb);
+		if (brid == 0)
+			return;
 
-	res = run_bench(brk->skid, brk->args);
+		brk = &fkinfo->bruns[brid - 1];
+		res = run_bench(brk->skid, brk->args);
 
-	if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
-		brk->res = res;
+		advance_epoch_static();
+
+		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
+			brk->res = res;
+		}
 	}
 }
 
@@ -77,9 +81,11 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 		brid = get_brid_dyn(&is_primary_mtb);
 		if (brid == 0)
 			return;
+
 		brk = &fkinfo->bruns[brid - 1];
 		res = run_bench(brk->skid, brk->args);
-		advance_epoch();
+
+		advance_epoch_dyn();
 
 		if (is_primary_mtb)
 			brk->res = res;
@@ -113,8 +119,7 @@ launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 		return FALSE;
 	}
 
-	if (!sched->use_static_sched)
-		wait_fedkern_initialized(d_fkinfo);
+	wait_fedkern_initialized(d_fkinfo);
 
 	init_tickcount();
 

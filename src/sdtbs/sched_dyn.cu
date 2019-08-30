@@ -1,12 +1,7 @@
 #include "sdtbs_cu.h"
+#include "sched_cu.h"
 
 #define EPOCH_MAX		64
-
-#define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
-#define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)
-#define mTB_INDEX_MY(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
-#define EPOCH(id_sm, idx)	mtb_epochs[mTB_INDEX(id_sm, idx) - 1]
-#define EPOCH_MY(id_sm)		mtb_epochs[mTB_INDEX_MY(id_sm) - 1]
 
 #define mTB_ALLOC_TABLE_EPOCH(epch)	(mATs + mTB_TOTAL_COUNT() * (epch))
 #define mTB_ALLOC_TABLE(id_sm, idx)	(mATs + mTB_TOTAL_COUNT() * EPOCH(id_sm, idx))
@@ -30,8 +25,6 @@
 
 #define mTB_SYNC_EPOCH(id_sm, idx, epch)	mTB_SYNC_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
 #define mTB_SYNC(id_sm, idx)	mTB_SYNC_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
-
-#define IS_LEADER_THREAD()	(threadIdx.x % N_THREADS_PER_mTB == 0)
 
 #define IS_SCHEDULE_DONE()	(n_tbs_assignable == d_fkinfo->n_tbs)
 
@@ -135,8 +128,6 @@ run_schedule_in_kernel(void)
 	}
 
 	if (id_sm_sched > 0) {
-		if (brk->primary_mtb_idx == 0)
-			brk->primary_mtb_idx = idx_mtb_start;
 		for (i = 0; i < brk->n_mtbs_per_tb; i++) {
 			if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0) {
 				BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
@@ -205,7 +196,7 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 
 		brid = BRK_INDEX_MY(id_sm);
 		if (brid != 0) {
-			if (IS_LEADER_THREAD() && d_fkinfo->bruns[brid - 1].primary_mtb_idx == mTB_INDEX_MY(id_sm))
+			if (IS_LEADER_THREAD() && mTB_OFFSET_TB_MY(id_sm) == 0)
 				*pis_primary_mtb = TRUE;
 			else
 				*pis_primary_mtb = FALSE;
@@ -225,7 +216,7 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 }
 
 __device__ void
-advance_epoch(void)
+advance_epoch_dyn(void)
 {
 	unsigned	id_sm = get_smid() + 1;
 

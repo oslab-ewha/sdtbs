@@ -2,8 +2,6 @@
 
 extern unsigned	n_max_mtbs_per_sm;
 
-static unsigned	n_cur_mtbs;
-
 static unsigned	n_cur_mtbs_fedkern;
 
 void
@@ -30,14 +28,14 @@ free_fedkern_info_dyn(fedkern_info_t *fkinfo)
 }
 
 void
-assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid)
+assign_fedkern_brid_dyn(fedkern_info_t *fkinfo, unsigned char brid)
 {
 	fkinfo->u.dyn.brids_submitted[n_cur_mtbs_fedkern] = brid;
 	n_cur_mtbs_fedkern++;
 }
 
 void
-assign_fedkern_brid_dyn(fedkern_info_t *d_fkinfo, unsigned char brid)
+assign_fedkern_brid_kernel(fedkern_info_t *d_fkinfo, unsigned char brid)
 {
 	cudaStream_t	strm;
 
@@ -48,16 +46,4 @@ assign_fedkern_brid_dyn(fedkern_info_t *d_fkinfo, unsigned char brid)
 	n_cur_mtbs_fedkern++;
 
 	cudaStreamDestroy(strm);
-}
-
-void
-assign_brid_dyn(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
-{
-	fkinfo->u.dyn.brids_submitted[n_cur_mtbs] = brid;
-	n_cur_mtbs++;
-}
-
-void
-init_sched_dyn(void)
-{
 }

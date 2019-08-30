@@ -23,14 +23,15 @@ typedef struct {
 	int		res;
 	dim3		dimGrid, dimBlock;
 	unsigned	n_mtbs_per_tb;
-	int		primary_mtb_idx;
 } benchrun_k_t;
 
 typedef struct {
-	/* mtb offset table */
-	unsigned short	*offsets;
-	/* mtb allocation table */
-	unsigned char	*mAT;
+	/* number of mAT */
+	unsigned	n_mATs;
+	/* mtb allocation tables */
+	unsigned char	**mATs;
+	/* mtb offset tables */
+	unsigned short	**mOTs;
 } fkinfo_static_t;
 
 typedef struct {
