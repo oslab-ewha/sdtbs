@@ -81,7 +81,7 @@ get_sched_brid(void)
 	if (d_fkinfo->fully_dynamic) {
 		while (!IS_SCHEDULE_DONE()) {
 			unsigned char	brid;
-			brid = *(volatile unsigned char *)(d_fkinfo->brids + n_tbs_assignable);
+			brid = *(volatile unsigned char *)(d_fkinfo->u.dyn.brids_submitted + n_tbs_assignable);
 			if (brid != 0)
 				return brid;
 			sleep_in_kernel();
@@ -89,7 +89,7 @@ get_sched_brid(void)
 		return 0;
 	}
 	else {
-		return d_fkinfo->brids[n_tbs_assignable];
+		return d_fkinfo->u.dyn.brids_submitted[n_tbs_assignable];
 	}
 }
 

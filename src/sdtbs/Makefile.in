@@ -102,6 +102,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_sdtbs_OBJECTS = sdtbs.$(OBJEXT) tbs_sd.$(OBJEXT) \
 	tbs_native.$(OBJEXT) benchmgr.$(OBJEXT) fedkern.$(OBJEXT) \
+	fedkern_dyn.$(OBJEXT) fedkern_static.$(OBJEXT) \
 	report.$(OBJEXT) misc.$(OBJEXT) benchapi.$(OBJEXT) \
 	sched.$(OBJEXT) sched_rr.$(OBJEXT) sched_rrf.$(OBJEXT) \
 	sched_fca.$(OBJEXT) sched_rrm.$(OBJEXT) sched_static.$(OBJEXT) \
@@ -271,8 +272,8 @@ top_srcdir = @top_srcdir@
 CLEANFILES = *~
 DISTCLEANFILES = *~
 LINK = @NVCC_PATH@ @NVCC_ARCHITECTURE@ -o $@
-sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu fedkern.cu report.cu misc.cu sdtbs.h sdtbs_cu.h \
-	benchapi.cu \
+sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu fedkern.cu fedkern_dyn.cu fedkern_static.cu \
+	report.cu misc.cu sdtbs.h sdtbs_cu.h benchapi.cu \
 	sched.cu sched_rr.cu sched_rrf.cu sched_fca.cu sched_rrm.cu \
 	sched_static.cu \
 	sched_dyn.cu sched_dyn_rr.cu sched_dyn_rrf.cu sched_dyn_fca.cu sched_dyn_rrm.cu

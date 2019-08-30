@@ -96,7 +96,7 @@ kernel_macro_TB(fedkern_info_t *fkinfo)
 }
 
 static BOOL
-launch_macro_TB(fedkern_info_t *d_fkinfo)
+launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 {
 	cudaStream_t	strm;
 	cudaError_t	err;
@@ -119,7 +119,7 @@ launch_macro_TB(fedkern_info_t *d_fkinfo)
 	init_tickcount();
 
 	if (!sched->use_semi_dynamic_sched && !sched->use_static_sched)
-		run_schedule_dyn(d_fkinfo);
+		run_schedule_dyn(fkinfo);
 
 	cudaDeviceSynchronize();
 	return TRUE;
@@ -141,7 +141,6 @@ run_sd_tbs(unsigned *pticks)
 {
 	fedkern_info_t	*fkinfo;
 	fedkern_info_t	*d_fkinfo;
-	unsigned short	*d_offsets = NULL;
 
 	if (!setup_gpu_devinfo()) {
 		error("no gpu found");
@@ -149,31 +148,23 @@ run_sd_tbs(unsigned *pticks)
 	}
 
 	init_sched();
-	fkinfo = setup_fedkern_info();
 
-	cudaMalloc(&d_fkinfo, fkinfo->size);
+	fkinfo = create_fedkern_info();
 
 	if (!run_schedule(fkinfo))
 		return FALSE;
 
-	if (sched->use_static_sched) {
-		cudaMalloc(&d_offsets, fkinfo->n_mtbs * sizeof(unsigned short));
-		cudaMemcpy(d_offsets, fkinfo->offsets, fkinfo->n_mtbs * sizeof(unsigned short), cudaMemcpyHostToDevice);
-		free(fkinfo->offsets);
-		fkinfo->offsets = d_offsets;
-	}
-	cudaMemcpy(d_fkinfo, fkinfo, fkinfo->size, cudaMemcpyHostToDevice);
+	d_fkinfo = create_fedkern_info_kernel(fkinfo);
 
-	if (!launch_macro_TB(d_fkinfo))
+	if (!launch_macro_TB(d_fkinfo, fkinfo))
 		return FALSE;
 
 	*pticks = get_tickcount();
 
-	cudaMemcpy(fkinfo, d_fkinfo, fkinfo->size, cudaMemcpyDeviceToHost);
+	cudaMemcpy(fkinfo, d_fkinfo, sizeof(fedkern_info_t), cudaMemcpyDeviceToHost);
 	collect_results(fkinfo);
 
-	if (d_offsets != NULL)
-		cudaFree(d_offsets);
+	free_fedkern_info(fkinfo);
 	cudaFree(d_fkinfo);
 
 	return TRUE;

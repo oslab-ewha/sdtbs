@@ -1,8 +1,8 @@
 #include "sdtbs_cu.h"
 
 #define mTB_INDEX_MY(id_sm)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + d_fkinfo->n_max_mtbs_per_MTB * blockIdx.y + (threadIdx.x / N_THREADS_PER_mTB) + 1)
-#define BRK_INDEX_MY(id_sm)	d_fkinfo->brids[mTB_INDEX_MY(id_sm) - 1]
-#define mTB_OFFSET_TB_MY(id_sm)	d_fkinfo->offsets[mTB_INDEX_MY(id_sm) - 1]
+#define BRK_INDEX_MY(id_sm)	d_fkinfo->u.sta.mAT[mTB_INDEX_MY(id_sm) - 1]
+#define mTB_OFFSET_TB_MY(id_sm)	d_fkinfo->u.sta.offsets[mTB_INDEX_MY(id_sm) - 1]
 
 __device__ static fedkern_info_t	*d_fkinfo;
 __device__ BOOL	static_sched;

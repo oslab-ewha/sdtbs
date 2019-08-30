@@ -2,24 +2,20 @@
 
 extern unsigned	n_max_mtbs_per_sm;
 
-static unsigned	n_cur_mtbs_fedkern;
+extern void setup_fedkern_info_static(fedkern_info_t *fkinfo);
+extern void setup_fedkern_info_dyn(fedkern_info_t *fkinfo);
+extern void setup_fedkern_info_kernel_static(fedkern_info_t *fkinfo);
+extern void setup_fedkern_info_kernel_dyn(fedkern_info_t *fkinfo);
+extern void free_fedkern_info_static(fedkern_info_t *fkinfo);
+extern void free_fedkern_info_dyn(fedkern_info_t *fkinfo);
 
 fedkern_info_t *
-setup_fedkern_info(void)
+create_fedkern_info(void)
 {
 	fedkern_info_t	*fkinfo;
-	unsigned	size_fkinfo;
-	unsigned	n_max_mtbs;
 
-	n_max_mtbs = n_sm_count * n_max_mtbs_per_sm;
+	fkinfo = (fedkern_info_t *)calloc(1, sizeof(fedkern_info_t));
 
-	if (sched->use_static_sched)
-		size_fkinfo = sizeof(fedkern_info_t) + n_max_mtbs * sizeof(unsigned);
-	else
-		size_fkinfo = sizeof(fedkern_info_t) + n_tbs_submitted * sizeof(unsigned);
-	fkinfo = (fedkern_info_t *)calloc(1, size_fkinfo);
-
-	fkinfo->size = size_fkinfo;
 	fkinfo->n_sm_count = n_sm_count;
 	fkinfo->sched_id = sched->use_static_sched ? 0: sched_id;
 	fkinfo->n_mtbs = n_mtbs_submitted;
@@ -28,11 +24,37 @@ setup_fedkern_info(void)
 	fkinfo->n_tbs = n_tbs_submitted;
 
 	if (sched->use_static_sched)
-		fkinfo->offsets = (unsigned short *)calloc(1, n_max_mtbs * sizeof(unsigned short));
+		setup_fedkern_info_static(fkinfo);
 	else
-		fkinfo->offsets = NULL;
+		setup_fedkern_info_dyn(fkinfo);
 
 	return fkinfo;
+}
+
+fedkern_info_t *
+create_fedkern_info_kernel(fedkern_info_t *fkinfo)
+{
+	fedkern_info_t	*d_fkinfo;
+
+	if (sched->use_static_sched)
+		setup_fedkern_info_kernel_static(fkinfo);
+	else
+		setup_fedkern_info_kernel_dyn(fkinfo);
+
+	cudaMalloc(&d_fkinfo, sizeof(fedkern_info_t));
+	cudaMemcpy(d_fkinfo, fkinfo, sizeof(fedkern_info_t), cudaMemcpyHostToDevice);
+
+	return d_fkinfo;
+}
+
+void
+free_fedkern_info(fedkern_info_t *fkinfo)
+{
+	if (sched->use_static_sched)
+		free_fedkern_info_static(fkinfo);
+	else
+		free_fedkern_info_dyn(fkinfo);	
+	free(fkinfo);
 }
 
 void
@@ -46,27 +68,6 @@ assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char bri
 	brk->dimGrid = brun->dimGrid;
 	brk->dimBlock = brun->dimBlock;
 	brk->n_mtbs_per_tb = brun->dimBlock.x * brun->dimBlock.y / N_THREADS_PER_mTB;
-}
-
-void
-assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid)
-{
-	fkinfo->brids[n_cur_mtbs_fedkern] = brid;
-	n_cur_mtbs_fedkern++;
-}
-
-void
-assign_fedkern_brid_dyn(fedkern_info_t *d_fkinfo, unsigned char brid)
-{
-	cudaStream_t	strm;
-
-	cudaStreamCreate(&strm);
-
-	cudaMemcpyAsync(d_fkinfo->brids + n_cur_mtbs_fedkern, &brid, 1, cudaMemcpyHostToDevice, strm);
-	cudaStreamSynchronize(strm);
-	n_cur_mtbs_fedkern++;
-
-	cudaStreamDestroy(strm);
 }
 
 void

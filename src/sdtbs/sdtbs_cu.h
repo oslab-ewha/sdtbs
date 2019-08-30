@@ -27,8 +27,18 @@ typedef struct {
 } benchrun_k_t;
 
 typedef struct {
+	/* mtb offset table */
+	unsigned short	*offsets;
+	/* mtb allocation table */
+	unsigned char	*mAT;
+} fkinfo_static_t;
+
+typedef struct {
+	unsigned char	*brids_submitted;
+} fkinfo_dyn_t;
+
+typedef struct {
 	benchrun_k_t	bruns[MAX_BENCHES];
-	unsigned	size;
 	unsigned	sched_id;
 	void *		sched_arg;
 	unsigned	n_sm_count;
@@ -38,9 +48,10 @@ typedef struct {
 	unsigned	n_tbs;
 	BOOL		initialized;
 	BOOL		fully_dynamic;
-	/* mtb offset table(for static schedule only)*/
-	unsigned short	*offsets;
-	unsigned char	brids[0];
+	union {
+		fkinfo_static_t	sta;
+		fkinfo_dyn_t	dyn;
+	} u;
 } fedkern_info_t;
 
 typedef struct {
@@ -73,8 +84,11 @@ __device__ void sleep_in_kernel(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
 __device__ unsigned get_n_active_mtbs(unsigned id_sm);
 
+fedkern_info_t *create_fedkern_info(void);
+fedkern_info_t *create_fedkern_info_kernel(fedkern_info_t *fkinfo);
+void free_fedkern_info(fedkern_info_t *fkinfo);
+
 BOOL setup_gpu_devinfo(void);
-fedkern_info_t *setup_fedkern_info(void);
 
 BOOL is_sm_avail(int id_sm, unsigned n_threads);
 unsigned get_sm_n_sched_mtbs(int id_sm);

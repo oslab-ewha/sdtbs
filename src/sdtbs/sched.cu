@@ -15,11 +15,8 @@ sched_t	*sched = &sched_hw;
 unsigned	sched_id = 1;
 char		*sched_argstr;
 
+unsigned	n_max_mtbs;
 unsigned	n_max_mtbs_per_sm;
-
-static unsigned	*n_cur_mtbs_per_sm;
-
-static unsigned n_cur_mtbs;
 
 extern BOOL run_native_tbs(unsigned *pticks);
 extern BOOL run_sd_tbs(unsigned *pticks);
@@ -27,6 +24,11 @@ extern BOOL run_sd_tbs(unsigned *pticks);
 extern void assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char brid);
 extern void assign_fedkern_brid(fedkern_info_t *fkinfo, unsigned char brid);
 extern void assign_fedkern_brid_dyn(fedkern_info_t *d_fkinfo, unsigned char brid);
+
+extern void init_sched_static(void);
+extern void init_sched_dyn(void);
+extern void assign_brid_static(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid, unsigned short offset);
+extern void assign_brid_dyn(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid);
 
 extern "C" void
 setup_sched(const char *strpol)
@@ -65,32 +67,12 @@ void
 init_sched(void)
 {
 	n_max_mtbs_per_sm = n_threads_per_MTB / N_THREADS_PER_mTB * n_MTBs_per_sm;
-	n_cur_mtbs_per_sm = (unsigned *)calloc(n_sm_count, sizeof(unsigned));
-}
+	n_max_mtbs = n_sm_count * n_max_mtbs_per_sm;
 
-static BOOL
-assign_brid_static(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid, unsigned short offset)
-{
-	unsigned	idx;
-
-	if (n_cur_mtbs_per_sm[id_sm - 1] == n_max_mtbs_per_sm)
-		return FALSE;
-	idx = (id_sm - 1) * n_max_mtbs_per_sm + n_cur_mtbs_per_sm[id_sm - 1];
-	fkinfo->brids[idx] = brid;
-	fkinfo->offsets[idx] = offset;
-	n_cur_mtbs_per_sm[id_sm - 1]++;
-	if (fkinfo->bruns[brid - 1].primary_mtb_idx == 0)
-		fkinfo->bruns[brid - 1].primary_mtb_idx = n_cur_mtbs + 1;
-	n_cur_mtbs++;
-
-	return TRUE;
-}
-
-static void
-assign_brid_dynamic(fedkern_info_t *fkinfo, unsigned id_sm, unsigned char brid)
-{
-	fkinfo->brids[n_cur_mtbs] = brid;
-	n_cur_mtbs++;
+	if (sched->use_static_sched)
+		init_sched_static();
+	else
+		init_sched_dyn();
 }
 
 static void
@@ -101,14 +83,10 @@ sched_micro_tb(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid, uns
 	ASSERT(brun->dimBlock.x % N_THREADS_PER_mTB == 0);
 
 	for (i = 0; i < brun->dimBlock.x * brun->dimBlock.y; i += N_THREADS_PER_mTB, (*poffset)++) {
-		if (sched->use_static_sched) {
-			if (!assign_brid_static(fkinfo, id_sm, brid, *poffset)) {
-				FATAL(3, "no micro tb avaiable in SM[%u]", id_sm);
-			}
-		}
-		else {
-			assign_brid_dynamic(fkinfo, id_sm, brid);
-		}
+		if (sched->use_static_sched)
+			assign_brid_static(fkinfo, id_sm, brid, *poffset);
+		else
+			assign_brid_dyn(fkinfo, id_sm, brid);
 	}
 }
 
@@ -177,22 +155,6 @@ run_schedule_dyn(fedkern_info_t *d_fkinfo)
 			assign_fedkern_brid_dyn(d_fkinfo, i + 1);
 		}
 	}
-}
-
-BOOL
-is_sm_avail(int id_sm, unsigned n_threads)
-{
-	unsigned	n_mtbs_new = (n_threads + N_THREADS_PER_mTB - 1) / N_THREADS_PER_mTB;
-
-	if (n_cur_mtbs_per_sm[id_sm - 1] + n_mtbs_new <= n_max_mtbs_per_sm)
-		return TRUE;
-	return FALSE;
-}
-
-unsigned
-get_sm_n_sched_mtbs(int id_sm)
-{
-	return n_cur_mtbs_per_sm[id_sm - 1];
 }
 
 extern "C" BOOL
