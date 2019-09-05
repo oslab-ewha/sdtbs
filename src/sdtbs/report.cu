@@ -1,15 +1,22 @@
 #include "sdtbs_cu.h"
 
+static const char	*tbs_type_desc[] = {
+	"native",
+	"native(relocatable)",
+	"sd(static)",
+	"sd(dynamic)",
+	"sd(semi-dynamic)"
+};
+
 extern "C" void
 report(unsigned elapsed)
 {
 	benchrun_t	*brun;
 	int	i;
 
-	printf("tbs type: %s\n", sched->direct_mode ? (sched->use_relocatable ? "native(relocatable)": "native") :
-	       sched->use_static_sched ? "sd(static)": sched->use_semi_dynamic_sched ? "sd(semi-dynamic)": "sd(dynamic)");
+	printf("tbs type: %s\n", tbs_type_desc[sched->type - 1]);
 	printf("policy: %s\n", sched->name);
-	if (!sched->direct_mode) {
+	if (sched->type != TBS_TYPE_HW && sched->type != TBS_TYPE_HW_RELOC) {
 		printf("sm count: %u\n", n_sm_count);
 		printf("n threads per MTB: %u\n", n_threads_per_MTB);
 		printf("n MTBs per SM: %u\n", n_MTBs_per_sm);

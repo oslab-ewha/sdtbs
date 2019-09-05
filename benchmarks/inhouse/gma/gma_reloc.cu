@@ -5,7 +5,6 @@ extern __device__ int gma(void *args[]);
 __global__ static void
 kernel_gma_reloc(void *args[], int *pres)
 {
-	native_mode = 1;
 	*pres = gma(args);
 }
 

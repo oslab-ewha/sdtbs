@@ -71,7 +71,7 @@ unlock_scheduling(void)
 static __device__ unsigned char
 get_sched_brid(void)
 {
-	if (d_fkinfo->fully_dynamic) {
+	if (d_fkinfo->tbs_type == TBS_TYPE_DYNAMIC) {
 		while (!IS_SCHEDULE_DONE()) {
 			unsigned char	brid;
 			brid = *(volatile unsigned char *)(d_fkinfo->u.dyn.brids_submitted + n_tbs_assignable);
@@ -250,7 +250,7 @@ get_offset_TB_dyn(void)
 }
 
 __device__ void
-sync_TB_threads(void)
+sync_TB_threads_dyn(void)
 {
 	if (IS_LEADER_THREAD()) {
 		benchrun_k_t	*brk = get_brk_dyn();

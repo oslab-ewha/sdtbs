@@ -51,7 +51,6 @@ cookarg_gma(dim3 dimGrid, dim3 dimBlock, void *args[])
 __global__ static void
 kernel_gma(void *args[], int *pres)
 {
-	native_mode = 1;
 	*pres = gma(args);
 }
 

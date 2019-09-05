@@ -17,13 +17,13 @@ create_fedkern_info(void)
 	fkinfo = (fedkern_info_t *)calloc(1, sizeof(fedkern_info_t));
 
 	fkinfo->n_sm_count = n_sm_count;
-	fkinfo->sched_id = sched->use_static_sched ? 0: sched_id;
+	fkinfo->sched_id = sched_id;
 	fkinfo->n_mtbs = n_mtbs_submitted;
 	fkinfo->n_max_mtbs_per_sm = n_max_mtbs_per_sm;
 	fkinfo->n_max_mtbs_per_MTB = n_max_mtbs_per_sm / n_MTBs_per_sm;
 	fkinfo->n_tbs = n_tbs_submitted;
 
-	if (sched->use_static_sched)
+	if (sched->type == TBS_TYPE_STATIC)
 		setup_fedkern_info_static(fkinfo);
 	else
 		setup_fedkern_info_dyn(fkinfo);
@@ -36,7 +36,7 @@ create_fedkern_info_kernel(fedkern_info_t *fkinfo)
 {
 	fedkern_info_t	*d_fkinfo;
 
-	if (sched->use_static_sched)
+	if (sched->type == TBS_TYPE_STATIC)
 		setup_fedkern_info_kernel_static(fkinfo);
 	else
 		setup_fedkern_info_kernel_dyn(fkinfo);
@@ -50,7 +50,7 @@ create_fedkern_info_kernel(fedkern_info_t *fkinfo)
 void
 free_fedkern_info(fedkern_info_t *fkinfo)
 {
-	if (sched->use_static_sched)
+	if (sched->type == TBS_TYPE_STATIC)
 		free_fedkern_info_static(fkinfo);
 	else
 		free_fedkern_info_dyn(fkinfo);	

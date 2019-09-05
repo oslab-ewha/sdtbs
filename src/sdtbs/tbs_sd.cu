@@ -95,7 +95,7 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 __global__ static void
 kernel_macro_TB(fedkern_info_t *fkinfo)
 {
-	if (fkinfo->sched_id == 0)
+	if (fkinfo->tbs_type == TBS_TYPE_STATIC)
 		kernel_macro_TB_static_sched(fkinfo);
 	else
 		kernel_macro_TB_dynamic_sched(fkinfo);
@@ -123,7 +123,7 @@ launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 
 	init_tickcount();
 
-	if (!sched->use_semi_dynamic_sched && !sched->use_static_sched)
+	if (sched->type == TBS_TYPE_DYNAMIC)
 		run_schedule_dyn(fkinfo);
 
 	cudaDeviceSynchronize();

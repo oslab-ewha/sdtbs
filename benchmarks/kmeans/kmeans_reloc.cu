@@ -5,7 +5,6 @@ extern __device__ int kmeans(void *args[]);
 __global__ static void
 kernel_kmeans_reloc(void *args[], int *pres)
 {
-	native_mode = 1;
 	*pres = kmeans(args);
 }
 

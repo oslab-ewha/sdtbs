@@ -35,7 +35,7 @@ get_tb_sm_rrm(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rrm = {
 	"rrm",
-	FALSE, FALSE, FALSE, FALSE,
+	TBS_TYPE_DYNAMIC,
 	parse_arg_rrm,
 	get_tb_sm_rrm
 };

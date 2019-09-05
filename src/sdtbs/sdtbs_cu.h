@@ -38,9 +38,18 @@ typedef struct {
 	unsigned char	*brids_submitted;
 } fkinfo_dyn_t;
 
+typedef enum {
+	TBS_TYPE_HW = 1,
+	TBS_TYPE_HW_RELOC,
+	TBS_TYPE_STATIC,
+	TBS_TYPE_DYNAMIC,
+	TBS_TYPE_SEMI_DYNAMIC
+} tbs_type_t;
+
 typedef struct {
 	benchrun_k_t	bruns[MAX_BENCHES];
 	unsigned	sched_id;
+	tbs_type_t	tbs_type;
 	void *		sched_arg;
 	unsigned	n_sm_count;
 	unsigned	n_max_mtbs_per_sm;
@@ -48,7 +57,6 @@ typedef struct {
 	unsigned	n_mtbs;
 	unsigned	n_tbs;
 	BOOL		initialized;
-	BOOL		fully_dynamic;
 	union {
 		fkinfo_static_t	sta;
 		fkinfo_dyn_t	dyn;
@@ -72,7 +80,7 @@ typedef struct {
 
 typedef struct {
 	const char	*name;
-	BOOL		direct_mode, use_semi_dynamic_sched, use_static_sched, use_relocatable;
+	tbs_type_t	type;
 	void *(*parse_arg)(const char *argstr);
 	unsigned (*get_tb_sm)(dim3 dimBlock, unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;

@@ -71,7 +71,6 @@ cookarg_lma(dim3 dimGrid, dim3 dimBlock, void *args[])
 __global__ static void
 kernel_lma(void *args[], int *pres)
 {
-	native_mode = 1;
 	*pres = lma(args);
 }
 

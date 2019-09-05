@@ -24,7 +24,7 @@ run_native_tbs(unsigned *pticks)
 		bench_func_t	bench;
 		cudaError_t	err;
 
-		bench = sched->use_relocatable ? brun->info->bench_func: brun->info->bench_func_noreloc;
+		bench = sched->type == TBS_TYPE_HW_RELOC ? brun->info->bench_func: brun->info->bench_func_noreloc;
 		bench(strms[i], brun->dimGrid, brun->dimBlock, (void **)((char *)d_args_brun + SIZE_ARGS * i), d_benches_res + i);
 		err = cudaGetLastError();
 		if (err != cudaSuccess) {

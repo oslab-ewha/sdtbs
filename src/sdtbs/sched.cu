@@ -26,6 +26,8 @@ extern void assign_fedkern_brid_static(fedkern_info_t *fkinfo, benchrun_t *brun,
 extern void assign_fedkern_brid_dyn(fedkern_info_t *fkinfo, unsigned char brid);
 extern void assign_fedkern_brid_kernel(fedkern_info_t *d_fkinfo, unsigned char brid);
 
+extern void init_benchapi(tbs_type_t type);
+
 extern "C" void
 setup_sched(const char *strpol)
 {
@@ -35,23 +37,33 @@ setup_sched(const char *strpol)
 		int	len = strlen(all_sched[i]->name);
 
 		if (strncmp(strpol, all_sched[i]->name, len) == 0) {
+			tbs_type_t	type;
+
 			sched = all_sched[i];
+			type = sched->type;
 			sched_id = i + 1;
+			if (strpol[len] == 'D') {
+				type = TBS_TYPE_SEMI_DYNAMIC;
+				len++;
+			}
+			else if (strpol[len] == 'R') {
+				if (sched->type != TBS_TYPE_HW)
+					FATAL(1, "invalid policy: %s", strpol);
+				type = TBS_TYPE_HW_RELOC;
+				len++;
+			}
+			else if (strpol[len] == 'S') {
+				type = TBS_TYPE_STATIC;
+				len++;
+			}
+
 			if (strpol[len] ==':')
 				sched_argstr = strdup(strpol + len + 1);
-			else if (strpol[len] == 'D' && strpol[len + 1] == '\0') {
-				sched->use_semi_dynamic_sched = TRUE;
-			}
-			else if (strpol[len] == 'R' && strpol[len + 1] == '\0') {
-				sched->use_relocatable = TRUE;
-			}
-			else if (strpol[len] == 'S' && strpol[len + 1] == '\0') {
-				sched->use_static_sched = TRUE;
-			}
-			else if (strpol[len] != '\0') {
+			else if (strpol[len] != '\0')
 				continue;
-			}
+
 			sched->name = strdup(strpol);
+			sched->type = type;
 			return;
 		}
 	}
@@ -76,7 +88,7 @@ sched_brun(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned char brid)
 
 	for (i = 0; i < brun->dimGrid.y; i++) {
 		for (j = 0; j < brun->dimGrid.x; j++) {
-			if (sched->use_static_sched) {
+			if (sched->type == TBS_TYPE_STATIC) {
 				unsigned	id_sm = sched->get_tb_sm(brun->dimBlock, j, i);
 				if (id_sm == 0) {
 					FATAL(3, "schedule failed");
@@ -96,7 +108,7 @@ run_schedule(fedkern_info_t *fkinfo)
 	benchrun_t	*brun;
 	int	i;
 
-	if (sched->get_tb_sm == NULL && sched->use_static_sched) {
+	if (sched->get_tb_sm == NULL && sched->type == TBS_TYPE_STATIC) {
 		error("static scheduling not supported");
 		return FALSE;
 	}
@@ -108,13 +120,12 @@ run_schedule(fedkern_info_t *fkinfo)
 		fkinfo->sched_arg = sched->parse_arg(sched_argstr);
 	}
 
-	if (!sched->use_semi_dynamic_sched && !sched->use_static_sched)
-		fkinfo->fully_dynamic = TRUE;
+	fkinfo->tbs_type = sched->type;
 
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
 		assign_fedkern_brun(fkinfo, brun, i + 1);
-		if (sched->use_semi_dynamic_sched || sched->use_static_sched)
+		if (sched->type == TBS_TYPE_SEMI_DYNAMIC || sched->type == TBS_TYPE_STATIC)
 			sched_brun(fkinfo, brun, i + 1);
 	}
 
@@ -138,7 +149,9 @@ run_schedule_dyn(fedkern_info_t *d_fkinfo)
 extern "C" BOOL
 run_tbs(unsigned *pticks)
 {
-	if (sched->direct_mode)
+	init_benchapi(sched->type);
+
+	if (sched->type == TBS_TYPE_HW || sched->type == TBS_TYPE_HW_RELOC)
 		return run_native_tbs(pticks);
 	else
 		return run_sd_tbs(pticks);

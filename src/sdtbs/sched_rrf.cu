@@ -20,7 +20,7 @@ get_tb_sm_rrf(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 
 sched_t	sched_rrf = {
 	"rrf",
-	FALSE, FALSE, FALSE, FALSE,
+	TBS_TYPE_DYNAMIC,
 	NULL,
 	get_tb_sm_rrf
 };

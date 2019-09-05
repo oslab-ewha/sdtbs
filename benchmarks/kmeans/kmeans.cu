@@ -204,7 +204,6 @@ cookarg_kmeans(dim3 dimGrid, dim3 dimBlock, void *args[])
 __global__ static void
 kernel_kmeans(void *args[], int *pres)
 {
-	native_mode = 1;
 	*pres = kmeans(args);
 }
 

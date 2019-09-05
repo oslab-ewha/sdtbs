@@ -9,7 +9,6 @@
 #define mTB_OFFSET_TB_MY(id_sm)	mTB_OFFSET_TABLE_MY(id_sm)[mTB_INDEX_MY(id_sm) - 1]
 
 __device__ static fedkern_info_t	*d_fkinfo;
-__device__ BOOL	static_sched;
 
 __device__ static unsigned char		**mATs;
 __device__ static unsigned short	**mOTs;
@@ -79,7 +78,6 @@ setup_static_sched(fedkern_info_t *_fkinfo)
 	}
 
 	d_fkinfo = _fkinfo;
-	static_sched = TRUE;
 	mATs = _fkinfo->u.sta.mATs;
 	mOTs = _fkinfo->u.sta.mOTs;
 

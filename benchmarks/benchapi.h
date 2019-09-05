@@ -1,8 +1,6 @@
 #ifndef _BENCHAPI_H_
 #define _BENCHAPI_H_
 
-extern __device__ int	native_mode;
-
 __device__ unsigned get_random(unsigned randx);
 
 __device__ int get_gridDimX(void);
