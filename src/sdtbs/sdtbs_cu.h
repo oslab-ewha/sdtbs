@@ -43,7 +43,8 @@ typedef enum {
 	TBS_TYPE_HW_RELOC,
 	TBS_TYPE_STATIC,
 	TBS_TYPE_DYNAMIC,
-	TBS_TYPE_SEMI_DYNAMIC
+	TBS_TYPE_SEMI_DYNAMIC,
+	TBS_TYPE_SOLO
 } tbs_type_t;
 
 typedef struct {
@@ -57,6 +58,7 @@ typedef struct {
 	unsigned	n_mtbs;
 	unsigned	n_tbs;
 	BOOL		initialized;
+
 	union {
 		fkinfo_static_t	sta;
 		fkinfo_dyn_t	dyn;
@@ -108,6 +110,6 @@ BOOL run_schedule(fedkern_info_t *kfinfo);
 void run_schedule_dyn(fedkern_info_t *d_kfinfo);
 
 void init_tickcount(void);
-unsigned long long get_tickcount(void);
+unsigned get_tickcount(void);
 
 #endif

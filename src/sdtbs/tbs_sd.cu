@@ -5,7 +5,8 @@ extern void init_sched(void);
 extern void wait_fedkern_initialized(fedkern_info_t *d_fkinfo);
 
 extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
-extern __device__ void setup_dyn_sched(fedkern_info_t *fkinfo);
+extern __device__ void try_setup_dyn_sched(fedkern_info_t *fkinfo);
+extern __device__ void run_schedule_as_solo(fedkern_info_t *fkinfo);
 extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch_static(void);
@@ -68,7 +69,7 @@ static __device__ void
 kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 {
 	if (threadIdx.x == 0 && threadIdx.y == 0) {
-		setup_dyn_sched(fkinfo);
+		try_setup_dyn_sched(fkinfo);
 	}
 	__syncthreads();
 
@@ -101,22 +102,33 @@ kernel_macro_TB(fedkern_info_t *fkinfo)
 		kernel_macro_TB_dynamic_sched(fkinfo);
 }
 
+__global__ static void
+kernel_solo_sched(fedkern_info_t *fkinfo)
+{
+	run_schedule_as_solo(fkinfo);
+}
+
 static BOOL
 launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 {
-	cudaStream_t	strm;
+	cudaStream_t	strm, strm_solo;
 	cudaError_t	err;
 
-	dim3 dimGrid(n_sm_count, n_MTBs_per_sm);
-	dim3 dimBlock(n_threads_per_MTB, 1);
+	dim3	dimGrid(n_sm_count, n_MTBs_per_sm);
+	dim3	dimBlock(n_threads_per_MTB, 1);
 
 	cudaStreamCreate(&strm);
 	kernel_macro_TB<<<dimGrid, dimBlock, 0, strm>>>(d_fkinfo);
-
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		error("kernel launch error: %s\n", cudaGetErrorString(err));
 		return FALSE;
+	}
+
+	if (sched->type == TBS_TYPE_SOLO) {
+		cudaStreamCreate(&strm_solo);
+		dim3	dimGrid(1, 1), dimBlock(1, 1);
+		kernel_solo_sched<<<dimGrid, dimBlock, 0, strm_solo>>>(d_fkinfo);
 	}
 
 	wait_fedkern_initialized(d_fkinfo);

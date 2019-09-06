@@ -1,6 +1,6 @@
 #include "../../config.h"
 
-#include "sdtbs.h"
+#include "sdtbs_cu.h"
 
 #include <sys/times.h>
 
@@ -66,6 +66,9 @@ setup_gpu_devinfo(void)
 	}
 
 	n_sm_count = prop.multiProcessorCount;
+	if (sched->type == TBS_TYPE_SOLO)
+		n_sm_count--;
+
 	if (arg_n_MTBs_per_sm == 0 && arg_n_threads_per_MTB == 0) {
 		n_threads_per_MTB = prop.maxThreadsPerBlock;
 		n_MTBs_per_sm = prop.maxThreadsPerMultiProcessor / n_threads_per_MTB;

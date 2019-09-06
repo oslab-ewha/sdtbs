@@ -86,8 +86,8 @@ get_sched_brid(void)
 	}
 }
 
-static __device__ void
-run_schedule_in_kernel(void)
+static __device__ BOOL
+assign_tb(void)
 {
 	benchrun_k_t	*brk;
 	unsigned	id_sm_sched;
@@ -95,19 +95,10 @@ run_schedule_in_kernel(void)
 	unsigned char	brid;
 	int	i;
 
-	if (lock_scheduling() < 0)
-		return;
-
-	if (IS_SCHEDULE_DONE()) {
-		unlock_scheduling();
-		return;
-	}
-
 	brid = get_sched_brid();
-	if (brid == 0) {
-		unlock_scheduling();
-		return;
-	}
+	if (brid == 0)
+		return FALSE;
+
 	brk = &d_fkinfo->bruns[brid - 1];
 
 	switch (d_fkinfo->sched_id) {
@@ -127,23 +118,44 @@ run_schedule_in_kernel(void)
 		break;
 	}
 
-	if (id_sm_sched > 0) {
-		for (i = 0; i < brk->n_mtbs_per_tb; i++) {
-			if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0) {
-				BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
-				mTB_OFFSET_TB(id_sm_sched, idx_mtb_start + i) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
-				mTB_SYNC(id_sm_sched, idx_mtb_start + i) = 0;
-			}
-			else {
-				int	epoch_next = (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX;
-				BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = brid;
-				mTB_OFFSET_TB_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
-				mTB_SYNC_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = 0;
-			}
+	if (id_sm_sched == 0)
+		return FALSE;
+
+	for (i = 0; i < brk->n_mtbs_per_tb; i++) {
+		if (BRK_INDEX(id_sm_sched, idx_mtb_start + i) == 0) {
+			BRK_INDEX(id_sm_sched, idx_mtb_start + i) = brid;
+			mTB_OFFSET_TB(id_sm_sched, idx_mtb_start + i) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
+			mTB_SYNC(id_sm_sched, idx_mtb_start + i) = 0;
 		}
-		BRK_N_MTBS_ASSIGNABLE(brid) += brk->n_mtbs_per_tb;
-		n_tbs_assignable++;
+		else {
+			int	epoch_next = (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX;
+			BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = brid;
+			mTB_OFFSET_TB_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = BRK_N_MTBS_ASSIGNABLE(brid) + i;
+			mTB_SYNC_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = 0;
+		}
 	}
+
+	BRK_N_MTBS_ASSIGNABLE(brid) += brk->n_mtbs_per_tb;
+	n_tbs_assignable++;
+	return TRUE;
+}
+
+static __device__ void
+run_schedule_in_kernel(void)
+{
+	if (d_fkinfo->tbs_type == TBS_TYPE_SOLO) {
+		sleep_in_kernel();
+		return;
+	}
+	if (lock_scheduling() < 0)
+		return;
+
+	if (IS_SCHEDULE_DONE()) {
+		unlock_scheduling();
+		return;
+	}
+
+	assign_tb();
 
 	unlock_scheduling();
 }
@@ -269,19 +281,11 @@ sync_TB_threads_dyn(void)
 	__syncwarp();
 }
 
-__device__ void
+static __device__ void
 setup_dyn_sched(fedkern_info_t *_fkinfo)
 {
 	int	size;
 	int	i;
-
-	if (blockIdx.x != 0 || blockIdx.y != 0) {
-		while (TRUE) {
-			if (*(volatile BOOL *)&_fkinfo->initialized)
-				return;
-			sleep_in_kernel();
-		}
-	}
 
 	d_fkinfo = _fkinfo;
 
@@ -296,7 +300,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	if (mOTs == NULL || mSTs == NULL) {
 		printf("out of memory: offset or sync table cannot be allocated\n");
 		going_to_shutdown = TRUE;
-		goto out;
+		return;
 	}
 	for (i = 0; i < size; i++) {
 		mOTs[i] = 0;
@@ -307,12 +311,37 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	if (mtb_epochs == NULL) {
 		printf("out of memory: epochs table cannot be allocated\n");
 		going_to_shutdown = TRUE;
-		goto out;
+		return;
 	}
 	for (i = 0; i < mTB_TOTAL_COUNT(); i++) {
 		mtb_epochs[i] = 0;
 	}
+}
 
-out:
+__device__ void
+try_setup_dyn_sched(fedkern_info_t *_fkinfo)
+{
+	if (_fkinfo->tbs_type == TBS_TYPE_SOLO || blockIdx.x != 0 || blockIdx.y != 0) {
+		while (TRUE) {
+			if (*(volatile BOOL *)&_fkinfo->initialized)
+				return;
+			sleep_in_kernel();
+		}
+	}
+	setup_dyn_sched(_fkinfo);
 	d_fkinfo->initialized = TRUE;
+}
+
+__device__ void
+run_schedule_as_solo(fedkern_info_t *fkinfo)
+{
+	setup_dyn_sched(fkinfo);
+	d_fkinfo->initialized = TRUE;
+	while (!IS_SCHEDULE_DONE()) {
+		while (TRUE) {
+			if (!assign_tb())
+				break;
+		}
+		sleep_in_kernel();
+	}
 }

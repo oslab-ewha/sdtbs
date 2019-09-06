@@ -42,6 +42,7 @@ setup_sched(const char *strpol)
 			sched = all_sched[i];
 			type = sched->type;
 			sched_id = i + 1;
+
 			if (strpol[len] == 'D') {
 				type = TBS_TYPE_SEMI_DYNAMIC;
 				len++;
@@ -54,6 +55,10 @@ setup_sched(const char *strpol)
 			}
 			else if (strpol[len] == 'S') {
 				type = TBS_TYPE_STATIC;
+				len++;
+			}
+			else if (strpol[len] == 'O') {
+				type = TBS_TYPE_SOLO;
 				len++;
 			}
 
@@ -125,7 +130,7 @@ run_schedule(fedkern_info_t *fkinfo)
 	brun = benchruns;
 	for (i = 0; i < n_benches; i++, brun++) {
 		assign_fedkern_brun(fkinfo, brun, i + 1);
-		if (sched->type == TBS_TYPE_SEMI_DYNAMIC || sched->type == TBS_TYPE_STATIC)
+		if (sched->type == TBS_TYPE_SEMI_DYNAMIC || sched->type == TBS_TYPE_SOLO || sched->type == TBS_TYPE_STATIC)
 			sched_brun(fkinfo, brun, i + 1);
 	}
 

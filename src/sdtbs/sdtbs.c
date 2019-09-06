@@ -15,7 +15,7 @@ usage(void)
 "                         fca(first come allocation)\n"
 "                         rrm(round-robin max):max mtbs per sm\n"
 "     hw policy suffix: R(relocatable)\n"
-"     other policy suffix: D(semi-dynamic), S(static)\n"
+"     other policy suffix: D(semi-dynamic), S(static), O(solo)\n"
 "  -M <MTB count per sm>\n"
 "  -T <thread count per MTB>\n"
 "  -h: help\n"

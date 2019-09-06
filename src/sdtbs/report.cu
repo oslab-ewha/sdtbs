@@ -5,7 +5,8 @@ static const char	*tbs_type_desc[] = {
 	"native(relocatable)",
 	"sd(static)",
 	"sd(dynamic)",
-	"sd(semi-dynamic)"
+	"sd(semi-dynamic)",
+	"solo"
 };
 
 extern "C" void
