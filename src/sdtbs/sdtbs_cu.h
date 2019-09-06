@@ -99,8 +99,10 @@ void free_fedkern_info(fedkern_info_t *fkinfo);
 
 BOOL setup_gpu_devinfo(void);
 
-BOOL is_sm_avail(int id_sm, unsigned n_threads);
-unsigned get_sm_n_sched_mtbs(int id_sm);
+unsigned get_n_mTBs_for_threads(unsigned n_threads);
+BOOL is_sm_avail(int id_sm, unsigned n_mTBs);
+unsigned get_sm_n_sched_mTBs(int id_sm);
+void use_next_mAT(int id_sm);
 
 BOOL run_schedule(fedkern_info_t *kfinfo);
 void run_schedule_dyn(fedkern_info_t *d_kfinfo);

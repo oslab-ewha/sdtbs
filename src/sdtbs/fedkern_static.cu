@@ -7,6 +7,7 @@ static unsigned	*n_cur_mtbs_per_sm;
 static unsigned	*sm_epochs;
 
 static unsigned	n_mATs_cur;
+static fedkern_info_t	*fkinfo_saved;
 
 void
 setup_fedkern_info_static(fedkern_info_t *fkinfo)
@@ -20,6 +21,8 @@ setup_fedkern_info_static(fedkern_info_t *fkinfo)
 	fkinfo->u.sta.mATs[0] = (unsigned char *)calloc(n_max_mtbs,  sizeof(unsigned char));
 	fkinfo->u.sta.mOTs = (unsigned short **)calloc(1, sizeof(unsigned short *));
 	fkinfo->u.sta.mOTs[0] = (unsigned short *)calloc(n_max_mtbs, sizeof(unsigned short));
+
+	fkinfo_saved = fkinfo;
 }
 
 void
@@ -126,18 +129,28 @@ assign_fedkern_brid_static(fedkern_info_t *fkinfo, benchrun_t *brun, unsigned ch
 	}
 }
 
-BOOL
-is_sm_avail(int id_sm, unsigned n_threads)
+unsigned
+get_n_mTBs_for_threads(unsigned n_threads)
 {
-	unsigned	n_mtbs_new = (n_threads + N_THREADS_PER_mTB - 1) / N_THREADS_PER_mTB;
+	return (n_threads + N_THREADS_PER_mTB - 1) / N_THREADS_PER_mTB;
+}
 
-	if (n_cur_mtbs_per_sm[id_sm - 1] + n_mtbs_new <= n_max_mtbs_per_sm)
+BOOL
+is_sm_avail(int id_sm, unsigned n_mTBs_new)
+{
+	if (n_cur_mtbs_per_sm[id_sm - 1] + n_mTBs_new <= n_max_mtbs_per_sm)
 		return TRUE;
 	return FALSE;
 }
 
 unsigned
-get_sm_n_sched_mtbs(int id_sm)
+get_sm_n_sched_mTBs(int id_sm)
 {
 	return n_cur_mtbs_per_sm[id_sm - 1];
+}
+
+void
+use_next_mAT(int id_sm)
+{
+	setup_next_mAT(fkinfo_saved, id_sm);
 }

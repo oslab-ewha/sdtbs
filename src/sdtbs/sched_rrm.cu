@@ -21,16 +21,23 @@ static unsigned
 get_tb_sm_rrm(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
 	unsigned	id_sm_start = id_sm;
+	unsigned	id_sm_res;
+	unsigned	n_mTBs = get_n_mTBs_for_threads(dimBlock.x * dimBlock.y);
 
-	while (!is_sm_avail(id_sm, dimBlock.x * dimBlock.y) || get_sm_n_sched_mtbs(id_sm) == max_mtbs_per_sm) {
+	while (!is_sm_avail(id_sm, n_mTBs) || get_sm_n_sched_mTBs(id_sm) + n_mTBs > max_mtbs_per_sm) {
 		if (id_sm == n_sm_count)
 			id_sm = 1;
 		else
 			id_sm++;
 		if (id_sm == id_sm_start)
-			return 0;
+			use_next_mAT(id_sm);
 	}
-	return id_sm;
+	id_sm_res = id_sm;
+	if (id_sm == n_sm_count)
+		id_sm = 1;
+	else
+		id_sm++;
+	return id_sm_res;
 }
 
 sched_t	sched_rrm = {

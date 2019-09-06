@@ -6,8 +6,9 @@ static unsigned
 get_tb_sm_rrf(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
 	unsigned	id_sm_old = id_sm;
+	unsigned	n_mTBs = get_n_mTBs_for_threads(dimBlock.x * dimBlock.y);
 
-	while (!is_sm_avail(id_sm, dimBlock.x * dimBlock.y)) {
+	while (!is_sm_avail(id_sm, n_mTBs)) {
 		if (id_sm == n_sm_count)
 			id_sm = 1;
 		else

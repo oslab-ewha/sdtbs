@@ -93,9 +93,11 @@ get_blockIdxY(void)
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
 		offset = get_offset_TB_static();
+		break;
 	default:
 		brk = get_brk_dyn();
 		offset = get_offset_TB_dyn();
+		break;
 	}
 	return ((offset * N_THREADS_PER_mTB) / brk->dimBlock.x) / brk->dimGrid.x;
 }
