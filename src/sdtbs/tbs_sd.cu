@@ -7,10 +7,14 @@ extern void wait_fedkern_initialized(fedkern_info_t *d_fkinfo);
 extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
 extern __device__ void try_setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ void run_schedule_as_solo(fedkern_info_t *fkinfo);
+extern __device__ void setup_host_sched(fedkern_info_t *fkinfo);
+
 extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
+extern __device__ unsigned char get_brid_host(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch_static(void);
 extern __device__ void advance_epoch_dyn(void);
+extern __device__ void advance_epoch_host(void);
 
 __device__ BOOL	going_to_shutdown;
 
@@ -93,13 +97,52 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 	}
 }
 
+static __device__ void
+kernel_macro_TB_host_sched(fedkern_info_t *fkinfo)
+{
+	if (threadIdx.x == 0 && threadIdx.y == 0) {
+		setup_host_sched(fkinfo);
+	}
+	__syncthreads();
+
+	while (!going_to_shutdown) {
+		unsigned char	brid;
+		benchrun_k_t	*brk;
+		BOOL	is_primary_mtb;
+		int	res;
+
+		brid = get_brid_host(&is_primary_mtb);
+		if (brid == 0)
+			return;
+
+		brk = &fkinfo->bruns[brid - 1];
+		res = run_bench(brk->skid, brk->args);
+
+		advance_epoch_host();
+
+		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
+			brk->res = res;
+		}
+	}
+}
+
 __global__ static void
 kernel_macro_TB(fedkern_info_t *fkinfo)
 {
-	if (fkinfo->tbs_type == TBS_TYPE_STATIC)
+	switch (fkinfo->tbs_type) {
+	case TBS_TYPE_STATIC:
 		kernel_macro_TB_static_sched(fkinfo);
-	else
+		break;
+	case TBS_TYPE_DYNAMIC:
+	case TBS_TYPE_SEMI_DYNAMIC:
 		kernel_macro_TB_dynamic_sched(fkinfo);
+		break;
+	case TBS_TYPE_HOST:
+		kernel_macro_TB_host_sched(fkinfo);
+		break;
+	default:
+		break;
+	}
 }
 
 __global__ static void
@@ -137,6 +180,8 @@ launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 
 	if (sched->type == TBS_TYPE_DYNAMIC)
 		run_schedule_dyn(fkinfo);
+	else if (sched->type == TBS_TYPE_HOST)
+		run_schedule_host(fkinfo);
 
 	cudaDeviceSynchronize();
 	return TRUE;

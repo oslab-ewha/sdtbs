@@ -61,6 +61,10 @@ setup_sched(const char *strpol)
 				type = TBS_TYPE_SOLO;
 				len++;
 			}
+			else if (strpol[len] == 'H') {
+				type = TBS_TYPE_HOST;
+				len++;
+			}
 
 			if (strpol[len] ==':')
 				sched_argstr = strdup(strpol + len + 1);

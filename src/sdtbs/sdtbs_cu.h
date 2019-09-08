@@ -44,8 +44,17 @@ typedef enum {
 	TBS_TYPE_STATIC,
 	TBS_TYPE_DYNAMIC,
 	TBS_TYPE_SEMI_DYNAMIC,
-	TBS_TYPE_SOLO
+	TBS_TYPE_SOLO,
+	TBS_TYPE_HOST
 } tbs_type_t;
+
+typedef struct {
+	BOOL		*pdone;
+	unsigned char	*epochs_dev;
+	unsigned char	*epochs_host;
+	unsigned char	*mAT;
+	unsigned short	*mOT;
+} fkinfo_host_t;
 
 typedef struct {
 	benchrun_k_t	bruns[MAX_BENCHES];
@@ -62,6 +71,7 @@ typedef struct {
 	union {
 		fkinfo_static_t	sta;
 		fkinfo_dyn_t	dyn;
+		fkinfo_host_t	host;
 	} u;
 } fedkern_info_t;
 
@@ -106,8 +116,9 @@ BOOL is_sm_avail(int id_sm, unsigned n_mTBs);
 unsigned get_sm_n_sched_mTBs(int id_sm);
 void use_next_mAT(int id_sm);
 
-BOOL run_schedule(fedkern_info_t *kfinfo);
-void run_schedule_dyn(fedkern_info_t *d_kfinfo);
+BOOL run_schedule(fedkern_info_t *fkinfo);
+void run_schedule_dyn(fedkern_info_t *fkinfo);
+void run_schedule_host(fedkern_info_t *fkinfo);
 
 void init_tickcount(void);
 unsigned get_tickcount(void);

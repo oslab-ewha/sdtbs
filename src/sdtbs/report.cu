@@ -6,7 +6,8 @@ static const char	*tbs_type_desc[] = {
 	"sd(static)",
 	"sd(dynamic)",
 	"sd(semi-dynamic)",
-	"solo"
+	"solo",
+	"host"
 };
 
 extern "C" void
