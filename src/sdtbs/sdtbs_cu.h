@@ -45,7 +45,8 @@ typedef enum {
 	TBS_TYPE_DYNAMIC,
 	TBS_TYPE_SEMI_DYNAMIC,
 	TBS_TYPE_SOLO,
-	TBS_TYPE_HOST
+	TBS_TYPE_HOST,
+	TBS_TYPE_PARALLEL
 } tbs_type_t;
 
 typedef struct {
@@ -57,6 +58,7 @@ typedef struct {
 } fkinfo_host_t;
 
 typedef struct {
+	int		n_bruns;
 	benchrun_k_t	bruns[MAX_BENCHES];
 	unsigned	sched_id;
 	tbs_type_t	tbs_type;

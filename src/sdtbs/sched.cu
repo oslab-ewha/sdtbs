@@ -5,10 +5,11 @@ extern sched_t	sched_rr;
 extern sched_t	sched_rrf;
 extern sched_t	sched_fca;
 extern sched_t	sched_rrm;
+extern sched_t	sched_rrp;
 
 static sched_t	*all_sched[] = {
 	&sched_hw,
-	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, NULL
+	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, &sched_rrp, NULL
 };
 
 sched_t	*sched = &sched_hw;
@@ -63,6 +64,10 @@ setup_sched(const char *strpol)
 			}
 			else if (strpol[len] == 'H') {
 				type = TBS_TYPE_HOST;
+				len++;
+			}
+                        else if (strpol[len] == 'P') {
+				type = TBS_TYPE_PARALLEL;
 				len++;
 			}
 
@@ -129,6 +134,7 @@ run_schedule(fedkern_info_t *fkinfo)
 		fkinfo->sched_arg = sched->parse_arg(sched_argstr);
 	}
 
+	fkinfo->n_bruns = n_benches;
 	fkinfo->tbs_type = sched->type;
 
 	brun = benchruns;

@@ -8,13 +8,16 @@ extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
 extern __device__ void try_setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ void run_schedule_as_solo(fedkern_info_t *fkinfo);
 extern __device__ void setup_host_sched(fedkern_info_t *fkinfo);
+extern __device__ void setup_prl_sched(fedkern_info_t *fkinfo);
 
 extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
 extern __device__ unsigned char get_brid_host(BOOL *pis_primary_mtb);
+extern __device__ unsigned char get_brid_prl(BOOL *pis_primary_mtb);
 extern __device__ void advance_epoch_static(void);
 extern __device__ void advance_epoch_dyn(void);
 extern __device__ void advance_epoch_host(void);
+extern __device__ void advance_epoch_prl(void);
 
 __device__ BOOL	going_to_shutdown;
 
@@ -126,6 +129,35 @@ kernel_macro_TB_host_sched(fedkern_info_t *fkinfo)
 	}
 }
 
+static __device__ void
+kernel_macro_TB_parallel_sched(fedkern_info_t *fkinfo)
+{
+	if (threadIdx.x == 0 && threadIdx.y == 0) {
+		setup_prl_sched(fkinfo);
+	}
+	__syncthreads();
+
+	while (!going_to_shutdown) {
+		unsigned char   brid;
+		benchrun_k_t    *brk;
+		BOOL    is_primary_mtb;
+		int     res;
+
+		brid = get_brid_prl(&is_primary_mtb);
+		if (brid == 0)
+			return;
+
+		brk = &fkinfo->bruns[brid - 1];
+		res = run_bench(brk->skid, brk->args);
+
+		advance_epoch_prl();
+
+		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
+			brk->res = res;
+		}
+	}
+}
+
 __global__ static void
 kernel_macro_TB(fedkern_info_t *fkinfo)
 {
@@ -139,6 +171,9 @@ kernel_macro_TB(fedkern_info_t *fkinfo)
 		break;
 	case TBS_TYPE_HOST:
 		kernel_macro_TB_host_sched(fkinfo);
+		break;
+	case TBS_TYPE_PARALLEL:
+		kernel_macro_TB_parallel_sched(fkinfo);
 		break;
 	default:
 		break;

@@ -2,8 +2,10 @@
 
 extern __device__ benchrun_k_t *get_brk_static(void);
 extern __device__ benchrun_k_t *get_brk_dyn(void);
+extern __device__ benchrun_k_t *get_brk_prl(void);
 extern __device__ unsigned short get_offset_TB_static(void);
 extern __device__ unsigned short get_offset_TB_dyn(void);
+extern __device__ unsigned short get_offset_TB_prl(void);
 extern __device__ void sync_TB_threads_dyn(void);
 
 static __device__ tbs_type_t	tbs_type;
@@ -31,6 +33,9 @@ get_gridDimX(void)
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
 		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
+		break;
 	default:
 		brk = get_brk_dyn();
 		break;
@@ -50,6 +55,9 @@ get_gridDimY(void)
 		return gridDim.y;
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
+		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
 		break;
 	default:
 		brk = get_brk_dyn();
@@ -72,6 +80,10 @@ get_blockIdxX(void)
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
 		offset = get_offset_TB_static();
+		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
+		offset = get_offset_TB_prl();
 		break;
 	default:
 		brk = get_brk_dyn();
@@ -114,6 +126,9 @@ get_blockDimX(void)
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
 		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
+		break;
 	default:
 		brk = get_brk_dyn();
 		break;
@@ -133,6 +148,9 @@ get_blockDimY(void)
 		return blockDim.y;
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
+		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
 		break;
 	default:
 		brk = get_brk_dyn();
@@ -155,6 +173,10 @@ get_threadIdxX(void)
 	case TBS_TYPE_STATIC:
 		brk = get_brk_static();
 		offset = get_offset_TB_static();
+		break;
+	case TBS_TYPE_PARALLEL:
+		brk = get_brk_prl();
+		offset = get_offset_TB_prl();
 		break;
 	default:
 		brk = get_brk_dyn();
