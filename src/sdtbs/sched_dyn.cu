@@ -1,3 +1,5 @@
+#include "../../config.h"
+
 #include "sdtbs_cu.h"
 #include "sched_cu.h"
 
@@ -221,7 +223,7 @@ get_brid_dyn(BOOL *pis_primary_mtb)
 		if (IS_LEADER_THREAD()) {
 			run_schedule_in_kernel();
 		}
-		__syncwarp();
+		SYNCWARP();
 	}
 
 	return 0;
@@ -235,13 +237,13 @@ advance_epoch_dyn(void)
 	if (IS_LEADER_THREAD()) {
 		EPOCH_MY(id_sm) = (EPOCH_MY(id_sm) + 1) % EPOCH_MAX;
 	}
-	__syncwarp();
+	SYNCWARP();
 
 	/* clean up brk index if epoch is recycled */
 	if (IS_LEADER_THREAD() && EPOCH_MY(id_sm) == 0) {
 		BRK_INDEX_MY(id_sm) = 0;
 	}
-	__syncwarp();
+	SYNCWARP();
 }
 
 __device__ benchrun_k_t *
@@ -278,7 +280,7 @@ sync_TB_threads_dyn(void)
 			}
 		}
 	}
-	__syncwarp();
+	SYNCWARP();
 }
 
 static __device__ void

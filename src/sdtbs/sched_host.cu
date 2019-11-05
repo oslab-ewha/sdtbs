@@ -1,3 +1,5 @@
+#include "../../config.h"
+
 #include "sdtbs_cu.h"
 #include "sched_cu.h"
 
@@ -46,7 +48,7 @@ wait_alloc_status(unsigned id_sm)
 		asm("ld.volatile.u8 %0, [%1];": "=r"(brid): "l"(&BRK_INDEX_MY(id_sm)));
 		BRK_INDEX_MY(id_sm) = (unsigned char)brid;
 	}
-	__syncwarp();
+	SYNCWARP();
 }
 
 __device__ unsigned char
@@ -81,7 +83,7 @@ advance_epoch_host(void)
 	if (IS_LEADER_THREAD()) {
 		EPOCH_DEV(id_sm)++;
 	}
-	__syncwarp();
+	SYNCWARP();
 }
 
 __device__ benchrun_k_t *

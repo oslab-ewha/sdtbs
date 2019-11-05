@@ -1,6 +1,12 @@
 #ifndef _SCHED_CU_H_
 #define _SCHED_CU_H_
 
+#if CUDA_COMPUTE >= 60
+#define SYNCWARP()	__syncwarp()
+#else
+#define SYNCWARP()	do {} while (0)
+#endif
+
 #define mTB_TOTAL_COUNT()	(d_fkinfo->n_max_mtbs_per_sm * d_fkinfo->n_sm_count)
 
 #define mTB_INDEX(id_sm, idx)	((id_sm - 1) * d_fkinfo->n_max_mtbs_per_sm + idx)

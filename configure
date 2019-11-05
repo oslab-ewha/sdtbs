@@ -4534,6 +4534,19 @@ fi
 
 if test -n "$cuda_microarch"; then
 	case $cuda_microarch in
+		fermi)
+		NVCC_ARCHITECTURE="--gpu-architecture compute_20"
+		NVCC_ARCHITECTURE=""
+
+$as_echo "#define CUDA_COMPUTE 20" >>confdefs.h
+
+		;;
+		maxwell)
+		NVCC_ARCHITECTURE="--gpu-architecture compute_53"
+
+$as_echo "#define CUDA_COMPUTE 53" >>confdefs.h
+
+		;;
 		pascal)
 		NVCC_ARCHITECTURE="--gpu-architecture compute_61"
 

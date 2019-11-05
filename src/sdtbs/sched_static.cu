@@ -1,3 +1,5 @@
+#include "../../config.h"
+
 #include "sdtbs_cu.h"
 #include "sched_cu.h"
 
@@ -50,7 +52,7 @@ advance_epoch_static(void)
 	if (IS_LEADER_THREAD()) {
 		EPOCH_MY(id_sm)++;
 	}
-	__syncwarp();
+	SYNCWARP();
 }
 
 __device__ benchrun_k_t *
