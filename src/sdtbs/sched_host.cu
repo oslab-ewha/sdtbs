@@ -52,7 +52,7 @@ wait_alloc_status(unsigned id_sm)
 }
 
 __device__ unsigned char
-get_brid_host(BOOL *pis_primary_mtb)
+get_skrid_host(BOOL *pis_primary_mtb)
 {
 	unsigned	id_sm;
 	unsigned char	brid;
@@ -86,15 +86,15 @@ advance_epoch_host(void)
 	SYNCWARP();
 }
 
-__device__ benchrun_k_t *
-get_brk_host(void)
+__device__ skrun_t *
+get_skr_host(void)
 {
-	unsigned char	brid;
+	unsigned char	skrid;
 
-	brid = get_brid_host(NULL);
-	if (brid == 0)
+	skrid = get_skrid_host(NULL);
+	if (skrid == 0)
 		return NULL;
-	return &d_fkinfo->bruns[brid - 1];
+	return &d_skruns[skrid - 1];
 }
 
 __device__ void

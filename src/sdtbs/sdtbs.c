@@ -127,7 +127,6 @@ parse_options(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	BOOL	res;
 	unsigned	elapsed;
 
 	if (parse_options(argc, argv) < 0) {

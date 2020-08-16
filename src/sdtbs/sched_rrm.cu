@@ -1,6 +1,8 @@
 #include "sdtbs_cu.h"
 
+#if 0 ///DEL
 static unsigned	id_sm = 1;
+#endif
 static int	max_mtbs_per_sm;
 
 static void *
@@ -20,6 +22,7 @@ parse_arg_rrm(const char *argstr)
 static unsigned
 get_tb_sm_rrm(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 {
+#if 0 ////DEL
 	unsigned	id_sm_start = id_sm;
 	unsigned	id_sm_res;
 	unsigned	n_mTBs = get_n_mTBs_for_threads(dimBlock.x * dimBlock.y);
@@ -38,6 +41,8 @@ get_tb_sm_rrm(dim3 dimBlock, unsigned n_tb_x, unsigned n_tb_y)
 	else
 		id_sm++;
 	return id_sm_res;
+#endif
+	return 0;
 }
 
 sched_t	sched_rrm = {

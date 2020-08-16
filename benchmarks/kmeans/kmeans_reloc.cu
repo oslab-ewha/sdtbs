@@ -2,14 +2,28 @@
 
 extern __device__ int kmeans(void *args[]);
 
-__global__ static void
-kernel_kmeans_reloc(void *args[], int *pres)
+__device__ int
+kmeans_reloc(void *args[])
 {
-	*pres = kmeans(args);
+	return kmeans(args);
 }
 
-void
-bench_kmeans_reloc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
+int
+bench_kmeans_reloc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	kernel_kmeans_reloc<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
+	void	**d_args;
+	int	res, *d_pres;
+
+	cudaMalloc(&d_args, sizeof(void *) * 5);
+	cudaMalloc(&d_pres, sizeof(int));
+	cudaMemcpyAsync(d_args, args, sizeof(void *) * 5, cudaMemcpyHostToDevice, strm);
+
+	launch_kernel(KMEANS_RELOC, strm, dimGrid, dimBlock, d_args, d_pres);
+
+	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
+	cudaStreamSynchronize(strm);
+	cudaFree(d_args);
+	cudaFree(d_pres);
+
+	return res;
 }

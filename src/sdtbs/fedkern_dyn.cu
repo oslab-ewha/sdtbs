@@ -4,6 +4,8 @@ extern unsigned	n_max_mtbs_per_sm;
 
 static unsigned	n_cur_mtbs_fedkern;
 
+fedkern_info_t	*fkinfo_dyn;
+
 void
 setup_fedkern_info_dyn(fedkern_info_t *fkinfo)
 {
@@ -35,15 +37,16 @@ assign_fedkern_brid_dyn(fedkern_info_t *fkinfo, unsigned char brid)
 }
 
 void
-assign_fedkern_brid_kernel(fedkern_info_t *d_fkinfo, unsigned char brid)
+assign_fedkern_brid_kernel(fedkern_info_t *fkinfo, unsigned char brid)
 {
 	cudaStream_t	strm;
 
 	cudaStreamCreate(&strm);
 
-	cudaMemcpyAsync(d_fkinfo->u.dyn.brids_submitted + n_cur_mtbs_fedkern, &brid, 1, cudaMemcpyHostToDevice, strm);
+	cudaMemcpyAsync(fkinfo->u.dyn.brids_submitted + n_cur_mtbs_fedkern, &brid, 1, cudaMemcpyHostToDevice, strm);
 	cudaStreamSynchronize(strm);
 	n_cur_mtbs_fedkern++;
 
 	cudaStreamDestroy(strm);
 }
+

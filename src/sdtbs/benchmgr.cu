@@ -1,6 +1,6 @@
 #include "sdtbs_cu.h"
 
-#define BENCH_PROTO(name)	void name(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
+#define BENCH_PROTO(name)	int name(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 #define BENCHMARK(base)	BENCH_PROTO(bench_##base); BENCH_PROTO(bench_##base##_reloc);
 #define BENCH_COOKARG(name)	int cookarg_##name(dim3 dimGrid, dim3 dimBlock, void *args[]);
 
@@ -18,10 +18,10 @@ int	n_tbs_submitted;
 int	n_mtbs_submitted;
 
 static benchinfo_t	benchinfos[] = {
-	{ "lc", 1, NULL, bench_loopcalc_reloc, bench_loopcalc },
-	{ "gma", 2, cookarg_gma, bench_gma_reloc, bench_gma },
-	{ "lma", 3, cookarg_lma, bench_lma_reloc, bench_lma },
-	{ "kmeans", 4, cookarg_kmeans, bench_kmeans_reloc, bench_kmeans },
+	{ "lc", LOOPCALC, NULL, bench_loopcalc_reloc, bench_loopcalc },
+	{ "gma", GMA, cookarg_gma, bench_gma_reloc, bench_gma },
+	{ "lma", LMA, cookarg_lma, bench_lma_reloc, bench_lma },
+	{ "kmeans", KMEANS, cookarg_kmeans, bench_kmeans_reloc, bench_kmeans },
 	{ NULL, 0, NULL, NULL }
 };
 

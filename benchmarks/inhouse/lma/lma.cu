@@ -68,14 +68,22 @@ cookarg_lma(dim3 dimGrid, dim3 dimBlock, void *args[])
 	return 0;
 }
 
-__global__ static void
-kernel_lma(void *args[], int *pres)
+int
+bench_lma(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	*pres = lma(args);
-}
+	void	**d_args;
+	int	res, *d_pres;
 
-void
-bench_lma(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
-{
-	kernel_lma<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
+        cudaMalloc(&d_args, sizeof(void *) * 4);
+        cudaMalloc(&d_pres, sizeof(int));
+	cudaMemcpyAsync(d_args, args, sizeof(void *) * 4, cudaMemcpyHostToDevice, strm);
+
+	launch_kernel(LMA, strm, dimGrid, dimBlock, d_args, d_pres);
+
+	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
+	cudaStreamSynchronize(strm);
+	cudaFree(d_args);
+	cudaFree(d_pres);
+
+	return res;
 }

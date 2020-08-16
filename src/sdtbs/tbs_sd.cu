@@ -4,73 +4,19 @@ extern void init_sched(void);
 
 extern void wait_fedkern_initialized(fedkern_info_t *d_fkinfo);
 
-extern __device__ void setup_static_sched(fedkern_info_t *fkinfo);
 extern __device__ void try_setup_dyn_sched(fedkern_info_t *fkinfo);
 extern __device__ void run_schedule_as_solo(fedkern_info_t *fkinfo);
 extern __device__ void setup_host_sched(fedkern_info_t *fkinfo);
 extern __device__ void setup_prl_sched(fedkern_info_t *fkinfo);
 
-extern __device__ unsigned char get_brid_static(BOOL *pis_primary_mtb);
-extern __device__ unsigned char get_brid_dyn(BOOL *pis_primary_mtb);
-extern __device__ unsigned char get_brid_host(BOOL *pis_primary_mtb);
-extern __device__ unsigned char get_brid_prl(BOOL *pis_primary_mtb);
-extern __device__ void advance_epoch_static(void);
-extern __device__ void advance_epoch_dyn(void);
+extern __device__ skrid_t get_skrid_dyn(BOOL *pis_primary_mtb);
+extern __device__ unsigned char get_skrid_host(BOOL *pis_primary_mtb);
+extern __device__ unsigned char get_skrid_prl(BOOL *pis_primary_mtb);
+extern __device__ void advance_epoch_dyn(skrid_t skrid);
 extern __device__ void advance_epoch_host(void);
 extern __device__ void advance_epoch_prl(void);
 
 __device__ BOOL	going_to_shutdown;
-
-__device__ int loopcalc(void *args[]);
-__device__ int gma(void *args[]);
-__device__ int lma(void *args[]);
-__device__ int kmeans(void *args[]);
-
-__device__ static int
-run_bench(int skid, void *args[])
-{
-	switch (skid) {
-	case 1:
-		return loopcalc(args);
-	case 2:
-		return gma(args);
-	case 3:
-		return lma(args);
-	case 4:
-		return kmeans(args);
-	default:
-		return 0;
-	}
-}
-
-static __device__ void
-kernel_macro_TB_static_sched(fedkern_info_t *fkinfo)
-{
-	if (threadIdx.x == 0 && threadIdx.y == 0) {
-		setup_static_sched(fkinfo);
-	}
-	__syncthreads();
-
-	while (!going_to_shutdown) {
-		unsigned char	brid;
-		benchrun_k_t	*brk;
-		BOOL	is_primary_mtb;
-		int	res;
-
-		brid = get_brid_static(&is_primary_mtb);
-		if (brid == 0)
-			return;
-
-		brk = &fkinfo->bruns[brid - 1];
-		res = run_bench(brk->skid, brk->args);
-
-		advance_epoch_static();
-
-		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
-			brk->res = res;
-		}
-	}
-}
 
 static __device__ void
 kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
@@ -81,22 +27,22 @@ kernel_macro_TB_dynamic_sched(fedkern_info_t *fkinfo)
 	__syncthreads();
 
 	while (!going_to_shutdown) {
-		benchrun_k_t	*brk;
-		unsigned char	brid;
+		skrun_t	*skr;
+		unsigned char	skrid;
 		int	res;
 		BOOL	is_primary_mtb;
 
-		brid = get_brid_dyn(&is_primary_mtb);
-		if (brid == 0)
+		skrid = get_skrid_dyn(&is_primary_mtb);
+		if (skrid == 0)
 			return;
 
-		brk = &fkinfo->bruns[brid - 1];
-		res = run_bench(brk->skid, brk->args);
+		skr = &d_skruns[skrid - 1];
+		res = run_sub_kernel((skid_t)skr->skid, skr->d_args);
 
-		advance_epoch_dyn();
+		advance_epoch_dyn(skrid);
 
 		if (is_primary_mtb)
-			brk->res = res;
+			*skr->d_pres = res;
 	}
 }
 
@@ -109,22 +55,22 @@ kernel_macro_TB_host_sched(fedkern_info_t *fkinfo)
 	__syncthreads();
 
 	while (!going_to_shutdown) {
-		unsigned char	brid;
-		benchrun_k_t	*brk;
+		unsigned char	skrid;
+		skrun_t	*skr;
 		BOOL	is_primary_mtb;
 		int	res;
 
-		brid = get_brid_host(&is_primary_mtb);
-		if (brid == 0)
+		skrid = get_skrid_host(&is_primary_mtb);
+		if (skrid == 0)
 			return;
 
-		brk = &fkinfo->bruns[brid - 1];
-		res = run_bench(brk->skid, brk->args);
+		skr = &d_skruns[skrid - 1];
+		res = run_sub_kernel((skid_t)skr->skid, skr->d_args);
 
 		advance_epoch_host();
 
 		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
-			brk->res = res;
+			*skr->d_pres = res;
 		}
 	}
 }
@@ -138,22 +84,22 @@ kernel_macro_TB_parallel_sched(fedkern_info_t *fkinfo)
 	__syncthreads();
 
 	while (!going_to_shutdown) {
-		unsigned char   brid;
-		benchrun_k_t    *brk;
+		unsigned char   skrid;
+		skrun_t    *skr;
 		BOOL    is_primary_mtb;
 		int     res;
 
-		brid = get_brid_prl(&is_primary_mtb);
-		if (brid == 0)
+		skrid = get_skrid_prl(&is_primary_mtb);
+		if (skrid == 0)
 			return;
 
-		brk = &fkinfo->bruns[brid - 1];
-		res = run_bench(brk->skid, brk->args);
+		skr = &d_skruns[skrid - 1];
+		res = run_sub_kernel((skid_t)skr->skid, skr->d_args);
 
 		advance_epoch_prl();
 
 		if (is_primary_mtb && threadIdx.x % N_THREADS_PER_mTB == 0) {
-			brk->res = res;
+			*skr->d_pres = res;
 		}
 	}
 }
@@ -161,12 +107,8 @@ kernel_macro_TB_parallel_sched(fedkern_info_t *fkinfo)
 __global__ static void
 kernel_macro_TB(fedkern_info_t *fkinfo)
 {
-	switch (fkinfo->tbs_type) {
-	case TBS_TYPE_STATIC:
-		kernel_macro_TB_static_sched(fkinfo);
-		break;
+	switch (d_tbs_type) {
 	case TBS_TYPE_DYNAMIC:
-	case TBS_TYPE_SEMI_DYNAMIC:
 		kernel_macro_TB_dynamic_sched(fkinfo);
 		break;
 	case TBS_TYPE_HOST:
@@ -191,7 +133,6 @@ launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 {
 	cudaStream_t	strm, strm_solo;
 	cudaError_t	err;
-
 	dim3	dimGrid(n_sm_count, n_MTBs_per_sm);
 	dim3	dimBlock(n_threads_per_MTB, 1);
 
@@ -211,14 +152,12 @@ launch_macro_TB(fedkern_info_t *d_fkinfo, fedkern_info_t *fkinfo)
 
 	wait_fedkern_initialized(d_fkinfo);
 
-	init_tickcount();
-
-	if (sched->type == TBS_TYPE_DYNAMIC)
-		run_schedule_dyn(fkinfo);
+	if (sched->type == TBS_TYPE_DYNAMIC) {
+		///run_schedule_dyn(fkinfo);
+	}
 	else if (sched->type == TBS_TYPE_HOST)
 		run_schedule_host(fkinfo);
 
-	cudaDeviceSynchronize();
 	return TRUE;
 }
 
@@ -229,15 +168,20 @@ collect_results(fedkern_info_t *fkinfo)
 	int	i;
 
 	for (i = 0, brun = benchruns; i < n_benches; i++, brun++) {
-		brun->res = fkinfo->bruns[i].res;
+		///TODO brun->res = fkinfo->skruns[i].res;
 	}
 }
+
+////TODO
+extern void start_benchruns(void);
+extern void wait_benchruns(void);
 
 BOOL
 run_sd_tbs(unsigned *pticks)
 {
 	fedkern_info_t	*fkinfo;
 	fedkern_info_t	*d_fkinfo;
+	extern fedkern_info_t	*fkinfo_dyn;
 
 	if (!setup_gpu_devinfo()) {
 		error("no gpu found");
@@ -246,15 +190,18 @@ run_sd_tbs(unsigned *pticks)
 
 	init_sched();
 
-	fkinfo = create_fedkern_info();
-
-	if (!run_schedule(fkinfo))
-		return FALSE;
+	fkinfo_dyn = fkinfo = create_fedkern_info();
 
 	d_fkinfo = create_fedkern_info_kernel(fkinfo);
 
 	if (!launch_macro_TB(d_fkinfo, fkinfo))
 		return FALSE;
+
+	start_benchruns();
+
+	init_tickcount();
+
+	wait_benchruns();
 
 	*pticks = get_tickcount();
 
@@ -262,6 +209,7 @@ run_sd_tbs(unsigned *pticks)
 	collect_results(fkinfo);
 
 	free_fedkern_info(fkinfo);
+	fkinfo_dyn = NULL;
 	cudaFree(d_fkinfo);
 
 	return TRUE;

@@ -20,8 +20,8 @@ __device__ static fedkern_info_t	*d_fkinfo;
 __device__ static unsigned char	*mAT;
 /* mtb current offsets */
 __device__ static unsigned short	*mOT;
-/* To calculate mtb offset easily, maintain mTB counts for all brun's */
-__device__ static unsigned *cnts_brun_mtbs;
+/* To calculate mtb offset easily, maintain mTB counts for all skrun's */
+__device__ static unsigned *cnts_skrun_mtbs;
 
 /* all mtb brids for submitted bruns */
 __device__ static unsigned char	*brids_submitted;
@@ -54,7 +54,7 @@ run_parallel_schedule_in_kernel(unsigned id_sm)
 }
 
 __device__ unsigned char
-get_brid_prl(BOOL *pis_primary_mtb)
+get_skrid_prl(BOOL *pis_primary_mtb)
 {
 	unsigned	id_sm;
 
@@ -99,17 +99,17 @@ advance_epoch_prl(void)
 	SYNCWARP();
 }
 
-__device__ benchrun_k_t *
-get_brk_prl(void)
+__device__ skrun_t *
+get_skr_prl(void)
 {
 	unsigned	id_sm;
-	unsigned char   brid;
+	unsigned char   skrid;
 
 	id_sm = get_smid() + 1;
-	brid = BRK_INDEX_MY(id_sm);
-	if (brid == 0)
+	skrid = BRK_INDEX_MY(id_sm);
+	if (skrid == 0)
 		return NULL;
-	return &d_fkinfo->bruns[brid - 1];
+	return &d_skruns[skrid - 1];
 }
 
 __device__ unsigned
@@ -142,10 +142,10 @@ prl_get_offset(unsigned idx)
 {
 	int	i;
 
-	for (i = 0; i < d_fkinfo->n_bruns; i++) {
-		if (idx <= cnts_brun_mtbs[i])
+	for (i = 0; i < d_fkinfo->n_qks; i++) {
+		if (idx <= cnts_skrun_mtbs[i])
 			break;
-		idx -= cnts_brun_mtbs[i];
+		idx -= cnts_skrun_mtbs[i];
 	}
 	return (unsigned short)(idx - 1);
 }
@@ -153,26 +153,26 @@ prl_get_offset(unsigned idx)
 static __device__ void
 init_prl_sched_by_master(fedkern_info_t *_fkinfo)
 {
-	benchrun_k_t	*brk;
+	skrun_t	*skr;
 	int	i, j, k;
 
 	d_fkinfo = _fkinfo;
 
-	cnts_brun_mtbs = (unsigned *)malloc(d_fkinfo->n_bruns * sizeof(unsigned));
+	cnts_skrun_mtbs = (unsigned *)malloc(d_fkinfo->n_qks * sizeof(unsigned));
 
-	brk = d_fkinfo->bruns;
-	for (i = 0; i < d_fkinfo->n_bruns; i++, brk++) {
-		cnts_brun_mtbs[i] = brk->n_mtbs_per_tb * brk->dimGrid.x * brk->dimGrid.y;
-		n_total_mtbs += cnts_brun_mtbs[i];
+	skr = d_skruns;
+	for (i = 0; i < d_fkinfo->n_qks; i++, skr++) {
+		cnts_skrun_mtbs[i] = skr->n_mtbs_per_tb * skr->dimGrid.x * skr->dimGrid.y;
+		n_total_mtbs += cnts_skrun_mtbs[i];
 	}
 
 	brids_submitted = (unsigned char *)malloc(n_total_mtbs);
 
-	brk = d_fkinfo->bruns;
+	skr = d_skruns;
 	k = 0;
-	for (i = 0; i < d_fkinfo->n_bruns; i++, brk++) {
-		unsigned	n_mtbs_brun = brk->n_mtbs_per_tb * brk->dimGrid.x * brk->dimGrid.y;
-		for (j = 0; j < n_mtbs_brun; j++, k++) {
+	for (i = 0; i < d_fkinfo->n_qks; i++, skr++) {
+		unsigned	n_mtbs_skr = skr->n_mtbs_per_tb * skr->dimGrid.x * skr->dimGrid.y;
+		for (j = 0; j < n_mtbs_skr; j++, k++) {
 			brids_submitted[k] = i + 1;
 		}
 	}

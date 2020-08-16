@@ -78,6 +78,7 @@ kmeans(void *args[])
 	kmeans_conf_t	*pkmc = (kmeans_conf_t *)args[4];
 	int	npoints = npoints_per_thread * get_gridDimX() * get_gridDimY() * get_blockDimX() * get_blockDimY();
 	kmeansPoints(pkmc->d_features, nfeatures, npoints, nclusters, niters, pkmc->d_membership, pkmc->d_clusters);
+
 	return 0;
 }
 
@@ -201,14 +202,22 @@ cookarg_kmeans(dim3 dimGrid, dim3 dimBlock, void *args[])
 	return 0;
 }
 
-__global__ static void
-kernel_kmeans(void *args[], int *pres)
+int
+bench_kmeans(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	*pres = kmeans(args);
-}
+	void	**d_args;
+	int	res, *d_pres;
 
-void
-bench_kmeans(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
-{
-	kernel_kmeans<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
+	cudaMalloc(&d_args, sizeof(void *) * 5);
+	cudaMalloc(&d_pres, sizeof(int));
+	cudaMemcpyAsync(d_args, args, sizeof(void *) * 5, cudaMemcpyHostToDevice, strm);
+
+	launch_kernel(KMEANS, strm, dimGrid, dimBlock, d_args, d_pres);
+
+	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
+	cudaStreamSynchronize(strm);
+	cudaFree(d_args);
+	cudaFree(d_pres);
+
+	return res;
 }

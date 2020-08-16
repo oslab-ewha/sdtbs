@@ -2,13 +2,10 @@
 
 extern unsigned	n_max_mtbs_per_sm;
 
-extern void setup_fedkern_info_static(fedkern_info_t *fkinfo);
 extern void setup_fedkern_info_dyn(fedkern_info_t *fkinfo);
 extern void setup_fedkern_info_host(fedkern_info_t *fkinfo);
-extern void setup_fedkern_info_kernel_static(fedkern_info_t *fkinfo);
 extern void setup_fedkern_info_kernel_dyn(fedkern_info_t *fkinfo);
 extern void setup_fedkern_info_kernel_host(fedkern_info_t *fkinfo);
-extern void free_fedkern_info_static(fedkern_info_t *fkinfo);
 extern void free_fedkern_info_dyn(fedkern_info_t *fkinfo);
 extern void free_fedkern_info_host(fedkern_info_t *fkinfo);
 
@@ -27,11 +24,7 @@ create_fedkern_info(void)
 	fkinfo->n_tbs = n_tbs_submitted;
 
 	switch (sched->type) {
-	case TBS_TYPE_STATIC:
-		setup_fedkern_info_static(fkinfo);
-		break;
 	case TBS_TYPE_DYNAMIC:
-	case TBS_TYPE_SEMI_DYNAMIC:
 		setup_fedkern_info_dyn(fkinfo);
 		break;
 	case TBS_TYPE_HOST:
@@ -49,11 +42,7 @@ create_fedkern_info_kernel(fedkern_info_t *fkinfo)
 	fedkern_info_t	*d_fkinfo;
 
 	switch (sched->type) {
-	case TBS_TYPE_STATIC:
-		setup_fedkern_info_kernel_static(fkinfo);
-		break;
 	case TBS_TYPE_DYNAMIC:
-	case TBS_TYPE_SEMI_DYNAMIC:
 		setup_fedkern_info_kernel_dyn(fkinfo);
 		break;
 	case TBS_TYPE_HOST:
@@ -72,11 +61,7 @@ void
 free_fedkern_info(fedkern_info_t *fkinfo)
 {
 	switch (sched->type) {
-	case TBS_TYPE_STATIC:
-		free_fedkern_info_static(fkinfo);
-		break;
 	case TBS_TYPE_DYNAMIC:
-	case TBS_TYPE_SEMI_DYNAMIC:
 		free_fedkern_info_dyn(fkinfo);
 		break;
 	case TBS_TYPE_HOST:
@@ -86,19 +71,6 @@ free_fedkern_info(fedkern_info_t *fkinfo)
 		break;
 	}
 	free(fkinfo);
-}
-
-void
-assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char brid)
-{
-	benchrun_k_t    *brk;
-
-	brk = &fkinfo->bruns[brid - 1];
-	brk->skid = brun->info->skid;
-	memcpy(brk->args, brun->args, sizeof(void *) * MAX_ARGS);
-	brk->dimGrid = brun->dimGrid;
-	brk->dimBlock = brun->dimBlock;
-	brk->n_mtbs_per_tb = brun->dimBlock.x * brun->dimBlock.y / N_THREADS_PER_mTB;
 }
 
 void

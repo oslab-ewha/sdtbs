@@ -3,6 +3,9 @@
 
 #include "sdtbs.h"
 
+#include "../../benchmarks/benchapi.h"
+
+#define MAX_QUEUED_KERNELS	20
 #define MAX_BENCHES	20
 #define MAX_ARGS	5
 #define N_THREADS_PER_mTB	32
@@ -15,15 +18,15 @@ extern int	n_tbs_submitted;
 extern int	n_mtbs_submitted;
 
 typedef int (*cookarg_func_t)(dim3 dimGrid, dim3 dimBlock, void *args[]);
-typedef void (*bench_func_t)(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres);
+typedef int (*bench_func_t)(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[]);
 
 typedef struct {
-	unsigned	skid;
-	void *	args[MAX_ARGS];
-	int		res;
+	skid_t		skid;
+	void		**d_args;
+	int		*d_pres;
 	dim3		dimGrid, dimBlock;
-	unsigned	n_mtbs_per_tb;
-} benchrun_k_t;
+	unsigned	n_tbs, n_mtbs_per_tb;
+} skrun_t;
 
 typedef struct {
 	/* number of mAT */
@@ -41,9 +44,7 @@ typedef struct {
 typedef enum {
 	TBS_TYPE_HW = 1,
 	TBS_TYPE_HW_RELOC,
-	TBS_TYPE_STATIC,
 	TBS_TYPE_DYNAMIC,
-	TBS_TYPE_SEMI_DYNAMIC,
 	TBS_TYPE_SOLO,
 	TBS_TYPE_HOST,
 	TBS_TYPE_PARALLEL
@@ -58,8 +59,8 @@ typedef struct {
 } fkinfo_host_t;
 
 typedef struct {
-	int		n_bruns;
-	benchrun_k_t	bruns[MAX_BENCHES];
+	int		n_qks;
+//	skrun_t		*skruns[MAX_QUEUED_KERNELS];
 	unsigned	sched_id;
 	tbs_type_t	tbs_type;
 	void *		sched_arg;
@@ -79,7 +80,7 @@ typedef struct {
 
 typedef struct {
 	const char	*code;
-	int	skid;
+	skid_t		skid;
 	cookarg_func_t	cookarg_func;
 	bench_func_t	bench_func;
 	bench_func_t	bench_func_noreloc;
@@ -88,7 +89,7 @@ typedef struct {
 typedef struct {
 	benchinfo_t	*info;
 	dim3	dimGrid, dimBlock;
-	void *	args[MAX_ARGS];
+	void	*args[MAX_ARGS];
 	int	res;
 } benchrun_t;
 
@@ -99,6 +100,10 @@ typedef struct {
 	unsigned (*get_tb_sm)(dim3 dimBlock, unsigned n_tbs_x, unsigned n_tbs_y);
 } sched_t;
 
+__device__ extern tbs_type_t	d_tbs_type;
+__device__ extern skrun_t	*d_skruns;
+__device__ extern unsigned	*d_mtbs_done_cnts;
+
 extern sched_t		*sched;
 extern benchrun_t	benchruns[MAX_BENCHES];
 
@@ -106,6 +111,8 @@ __device__ uint get_smid(void);
 __device__ void sleep_in_kernel(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
 __device__ unsigned get_n_active_mtbs(unsigned id_sm);
+
+__device__ int run_sub_kernel(skid_t skid, void *args[]);
 
 fedkern_info_t *create_fedkern_info(void);
 fedkern_info_t *create_fedkern_info_kernel(fedkern_info_t *fkinfo);
@@ -118,7 +125,6 @@ BOOL is_sm_avail(int id_sm, unsigned n_mTBs);
 unsigned get_sm_n_sched_mTBs(int id_sm);
 void use_next_mAT(int id_sm);
 
-BOOL run_schedule(fedkern_info_t *fkinfo);
 void run_schedule_dyn(fedkern_info_t *fkinfo);
 void run_schedule_host(fedkern_info_t *fkinfo);
 

@@ -2,14 +2,28 @@
 
 extern __device__ int lma(void *args[]);
 
-__global__ static void
-kernel_lma_reloc(void *args[], int *pres)
+__device__ int
+lma_reloc(void *args[])
 {
-	*pres = lma(args);
+	return lma(args);
 }
 
-void
-bench_lma_reloc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[], int *pres)
+int
+bench_lma_reloc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	kernel_lma_reloc<<<dimGrid, dimBlock, 0, strm>>>(args, pres);
+	void    **d_args;
+	int	res, *d_pres;
+
+	cudaMalloc(&d_args, sizeof(void *) * 4);
+	cudaMalloc(&d_pres, sizeof(int));
+	cudaMemcpyAsync(d_args, args, sizeof(void *) * 4, cudaMemcpyHostToDevice, strm);
+
+	launch_kernel(LMA_RELOC, strm, dimGrid, dimBlock, d_args, d_pres);
+
+	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
+	cudaStreamSynchronize(strm);
+	cudaFree(d_args);
+	cudaFree(d_pres);
+
+	return res;
 }
