@@ -6,6 +6,7 @@
 __device__ tbs_type_t	d_tbs_type;
 __device__ skrun_t	*d_skruns;
 __device__ unsigned	*d_mtbs_done_cnts;
+
 static skrun_t	*g_skruns;
 static unsigned	*g_mtbs_done_cnts;
 
@@ -23,40 +24,53 @@ static pthread_cond_t	cond = PTHREAD_COND_INITIALIZER;
 static cudaStream_t	strm_submit;
 
 #define SK_PROTO(name)	__device__ int name(void *args[])
-#define SK_FUNCS(base)	SK_PROTO(base); SK_PROTO(base##_reloc);
+#define SK_FUNCS(base)	SK_PROTO(base);
 
 SK_FUNCS(loopcalc)
+SK_FUNCS(mklc)
 SK_FUNCS(gma)
 SK_FUNCS(lma)
 SK_FUNCS(kmeans)
 
-__device__ int
-run_sub_kernel(skid_t skid, void *args[])
+static __device__ int
+run_sub_kernel_func(skid_t skid, void *args[])
 {
 	switch (skid) {
 	case LOOPCALC:
 		return loopcalc(args);
-	case LOOPCALC_RELOC:
-		return loopcalc_reloc(args);
+	case MKLC:
+		return mklc(args);		
 	case GMA:
 		return gma(args);
-	case GMA_RELOC:
-		return gma_reloc(args);
 	case LMA:
 		return lma(args);
-	case LMA_RELOC:
-		return lma_reloc(args);
 	case KMEANS:
 		return kmeans(args);
-	case KMEANS_RELOC:
-		return kmeans_reloc(args);
 	default:
 		return 0;
 	}
 }
 
-skrid_t
-submit_skrun(skid_t skid, dim3 dimGrid, dim3 dimBlock, void *d_args[], int *d_pres)
+__device__ void
+run_sub_kernel(skrid_t skrid)
+{
+	skrun_t	*skr;
+	int	res;
+
+	skr = &d_skruns[skrid - 1];
+	res = run_sub_kernel_func(skr->skid, skr->args);
+	if (get_threadIdxX() == 0)
+		skr->res = res;
+}
+
+__global__ void
+sub_kernel_func(skrid_t skrid)
+{
+	run_sub_kernel(skrid);
+}
+
+static skrid_t
+submit_skrun(skid_t skid, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
 	skrid_t	skrid;
 	skrun_t	skrun;
@@ -64,8 +78,8 @@ submit_skrun(skid_t skid, dim3 dimGrid, dim3 dimBlock, void *d_args[], int *d_pr
 	skrun.skid = skid;
 	skrun.dimGrid = dimGrid;
 	skrun.dimBlock = dimBlock;
-	skrun.d_args = d_args;
-	skrun.d_pres = d_pres;
+	memcpy(skrun.args, args, sizeof(void *) * MAX_ARGS);
+	skrun.res = 0;
 	skrun.n_tbs = dimGrid.x * dimGrid.y;
 	skrun.n_mtbs_per_tb = dimBlock.x * dimBlock.y / N_THREADS_PER_mTB;
 
@@ -84,7 +98,19 @@ submit_skrun(skid_t skid, dim3 dimGrid, dim3 dimBlock, void *d_args[], int *d_pr
 	return skrid;
 }
 
-void
+skrid_t
+launch_kernel(skid_t skid, cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
+{
+	skrid_t	skrid;
+
+	skrid = submit_skrun(skid, dimGrid, dimBlock, args);
+
+	if (sched->type == TBS_TYPE_HW)
+		sub_kernel_func<<<dimGrid, dimBlock, 0, strm>>>(skrid);
+	return skrid;
+}
+
+static void
 wait_skrun(skrid_t skrid)
 {
 	pthread_mutex_lock(&mutex);
@@ -93,6 +119,23 @@ wait_skrun(skrid_t skrid)
 		pthread_cond_wait(&cond, &mutex);
 
 	pthread_mutex_unlock(&mutex);
+}
+
+void
+wait_kernel(skrid_t skrid, cudaStream_t strm, int *pres)
+{
+	skrun_t	*skr;
+	int	res;
+
+	if (sched->type == TBS_TYPE_HW)
+		cudaStreamSynchronize(strm);
+	else
+		wait_skrun(skrid);
+
+	skr = g_skruns + (skrid - 1);
+	cudaMemcpyAsync(&res, &skr->res, sizeof(int), cudaMemcpyDeviceToHost, strm);
+	cudaStreamSynchronize(strm);
+	*pres = res;
 }
 
 static void
@@ -137,7 +180,7 @@ skruns_checkfunc(void *arg)
 			notify_done_skruns(mtbs_done_cnts, n_checks);
 			free(mtbs_done_cnts);
 		}
-		usleep(100000);
+		usleep(100);
 	}
 
 	cudaStreamDestroy(strm);

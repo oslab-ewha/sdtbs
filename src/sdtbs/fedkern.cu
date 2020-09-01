@@ -2,17 +2,11 @@
 
 extern unsigned	n_max_mtbs_per_sm;
 
-extern void setup_fedkern_info_dyn(fedkern_info_t *fkinfo);
-extern void setup_fedkern_info_host(fedkern_info_t *fkinfo);
-extern void setup_fedkern_info_kernel_dyn(fedkern_info_t *fkinfo);
-extern void setup_fedkern_info_kernel_host(fedkern_info_t *fkinfo);
-extern void free_fedkern_info_dyn(fedkern_info_t *fkinfo);
-extern void free_fedkern_info_host(fedkern_info_t *fkinfo);
-
 fedkern_info_t *
 create_fedkern_info(void)
 {
 	fedkern_info_t	*fkinfo;
+	fedkern_info_t	*g_fkinfo;
 
 	fkinfo = (fedkern_info_t *)calloc(1, sizeof(fedkern_info_t));
 
@@ -21,56 +15,18 @@ create_fedkern_info(void)
 	fkinfo->n_mtbs = n_mtbs_submitted;
 	fkinfo->n_max_mtbs_per_sm = n_max_mtbs_per_sm;
 	fkinfo->n_max_mtbs_per_MTB = n_max_mtbs_per_sm / n_MTBs_per_sm;
-	fkinfo->n_tbs = n_tbs_submitted;
+	fkinfo->sched_done = FALSE;
 
-	switch (sched->type) {
-	case TBS_TYPE_DYNAMIC:
-		setup_fedkern_info_dyn(fkinfo);
-		break;
-	case TBS_TYPE_HOST:
-		setup_fedkern_info_host(fkinfo);
-		break;
-	default:
-		break;
-	}
-	return fkinfo;
-}
+	cudaMalloc(&g_fkinfo, sizeof(fedkern_info_t));
+	cudaMemcpy(g_fkinfo, fkinfo, sizeof(fedkern_info_t), cudaMemcpyHostToDevice);
 
-fedkern_info_t *
-create_fedkern_info_kernel(fedkern_info_t *fkinfo)
-{
-	fedkern_info_t	*d_fkinfo;
-
-	switch (sched->type) {
-	case TBS_TYPE_DYNAMIC:
-		setup_fedkern_info_kernel_dyn(fkinfo);
-		break;
-	case TBS_TYPE_HOST:
-		setup_fedkern_info_kernel_host(fkinfo);
-		break;
-	default:
-		break;
-	}
-	cudaMalloc(&d_fkinfo, sizeof(fedkern_info_t));
-	cudaMemcpy(d_fkinfo, fkinfo, sizeof(fedkern_info_t), cudaMemcpyHostToDevice);
-
-	return d_fkinfo;
+	return g_fkinfo;
 }
 
 void
-free_fedkern_info(fedkern_info_t *fkinfo)
+free_fedkern_info(fedkern_info_t *g_fkinfo)
 {
-	switch (sched->type) {
-	case TBS_TYPE_DYNAMIC:
-		free_fedkern_info_dyn(fkinfo);
-		break;
-	case TBS_TYPE_HOST:
-		free_fedkern_info_host(fkinfo);
-		break;
-	default:
-		break;
-	}
-	free(fkinfo);
+	cudaFree(g_fkinfo);
 }
 
 void

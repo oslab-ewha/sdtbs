@@ -2,13 +2,7 @@
 
 static const char	*tbs_type_desc[] = {
 	"native",
-	"native(relocatable)",
-	"sd(static)",
-	"sd(dynamic)",
-	"sd(semi-dynamic)",
-	"solo",
-	"host",
-	"parallel"
+	"sd(dynamic)"
 };
 
 extern "C" void
@@ -19,7 +13,7 @@ report(unsigned elapsed)
 
 	printf("tbs type: %s\n", tbs_type_desc[sched->type - 1]);
 	printf("policy: %s\n", sched->name);
-	if (sched->type != TBS_TYPE_HW && sched->type != TBS_TYPE_HW_RELOC) {
+	if (sched->type != TBS_TYPE_HW) {
 		printf("sm count: %u\n", n_sm_count);
 		printf("n threads per MTB: %u\n", n_threads_per_MTB);
 		printf("n MTBs per SM: %u\n", n_MTBs_per_sm);

@@ -51,19 +51,11 @@ cookarg_gma(dim3 dimGrid, dim3 dimBlock, void *args[])
 int
 bench_gma(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	void	**d_args;
-	int	res, *d_pres;
+	skrid_t	skrid;
+	int	res;
 
-	cudaMalloc(&d_args, sizeof(void *) * 3);
-	cudaMalloc(&d_pres, sizeof(int));
-	cudaMemcpyAsync(d_args, args, sizeof(void *) * 3, cudaMemcpyHostToDevice, strm);
-
-	launch_kernel(GMA, strm, dimGrid, dimBlock, d_args, d_pres);
-
-	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
-	cudaStreamSynchronize(strm);
-	cudaFree(d_args);
-	cudaFree(d_pres);
+	skrid = launch_kernel(GMA, strm, dimGrid, dimBlock, args);
+	wait_kernel(skrid, strm, &res);
 
 	return res;
 }

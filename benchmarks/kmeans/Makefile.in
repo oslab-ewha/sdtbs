@@ -106,7 +106,7 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libkmeans_a_AR = $(AR) $(ARFLAGS)
 libkmeans_a_LIBADD =
-am_libkmeans_a_OBJECTS = kmeans.$(OBJEXT) kmeans_reloc.$(OBJEXT)
+am_libkmeans_a_OBJECTS = kmeans.$(OBJEXT)
 libkmeans_a_OBJECTS = $(am_libkmeans_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -252,7 +252,7 @@ CLEANFILES = *~
 DISTCLEANFILES = *~
 AM_CPPFLAGS = 
 noinst_LIBRARIES = libkmeans.a
-libkmeans_a_SOURCES = kmeans.cu kmeans_reloc.cu
+libkmeans_a_SOURCES = kmeans.cu
 all: all-am
 
 .SUFFIXES:

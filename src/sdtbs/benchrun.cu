@@ -13,7 +13,7 @@ bench_func(void *ctx)
 	int		res;
 
 	cudaStreamCreate(&strm);
-	bench = sched->type == TBS_TYPE_HW_RELOC ? brun->info->bench_func: brun->info->bench_func_noreloc;
+	bench = brun->info->bench_func;
 	res = bench(strm, brun->dimGrid, brun->dimBlock, brun->args);
 	cudaStreamSynchronize(strm);
 	cudaStreamDestroy(strm);

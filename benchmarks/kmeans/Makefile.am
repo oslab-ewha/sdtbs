@@ -5,6 +5,6 @@ AM_CPPFLAGS =
 
 noinst_LIBRARIES = libkmeans.a
 
-libkmeans_a_SOURCES = kmeans.cu kmeans_reloc.cu
+libkmeans_a_SOURCES = kmeans.cu
 
 include $(top_srcdir)/makefile.cu

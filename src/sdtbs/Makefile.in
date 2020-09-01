@@ -102,16 +102,15 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_sdtbs_OBJECTS = sdtbs.$(OBJEXT) tbs_sd.$(OBJEXT) \
 	tbs_native.$(OBJEXT) benchmgr.$(OBJEXT) benchrun.$(OBJEXT) \
-	skrun.$(OBJEXT) fedkern.$(OBJEXT) fedkern_dyn.$(OBJEXT) \
-	fedkern_host.$(OBJEXT) report.$(OBJEXT) misc.$(OBJEXT) \
-	benchapi.$(OBJEXT) sched.$(OBJEXT) sched_rr.$(OBJEXT) \
-	sched_rrf.$(OBJEXT) sched_fca.$(OBJEXT) sched_rrm.$(OBJEXT) \
-	sched_host.$(OBJEXT) sched_prl.$(OBJEXT) sched_dyn.$(OBJEXT) \
-	sched_dyn_rr.$(OBJEXT) sched_dyn_rrf.$(OBJEXT) \
-	sched_dyn_fca.$(OBJEXT) sched_dyn_rrm.$(OBJEXT) \
-	sched_prl_rrp.$(OBJEXT)
+	skrun.$(OBJEXT) fedkern.$(OBJEXT) report.$(OBJEXT) \
+	misc.$(OBJEXT) benchapi.$(OBJEXT) sched.$(OBJEXT) \
+	sched_rr.$(OBJEXT) sched_rrf.$(OBJEXT) sched_fca.$(OBJEXT) \
+	sched_rrm.$(OBJEXT) sched_dyn.$(OBJEXT) sched_dyn_rr.$(OBJEXT) \
+	sched_dyn_rrf.$(OBJEXT) sched_dyn_fca.$(OBJEXT) \
+	sched_dyn_rrm.$(OBJEXT)
 sdtbs_OBJECTS = $(am_sdtbs_OBJECTS)
 sdtbs_DEPENDENCIES = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
+	../../benchmarks/inhouse/mklc/libmklc.a \
 	../../benchmarks/inhouse/gma/libgma.a \
 	../../benchmarks/inhouse/lma/liblma.a \
 	../../benchmarks/kmeans/libkmeans.a
@@ -274,14 +273,12 @@ CLEANFILES = *~
 DISTCLEANFILES = *~
 LINK = @NVCC_PATH@ @NVCC_ARCHITECTURE@ -o $@
 sdtbs_SOURCES = sdtbs.c tbs_sd.cu tbs_native.cu benchmgr.cu benchrun.cu skrun.cu \
-	fedkern.cu fedkern_dyn.cu fedkern_host.cu \
-	report.cu misc.cu sdtbs.h sdtbs_cu.h benchapi.cu \
+	fedkern.cu report.cu misc.cu sdtbs.h sdtbs_cu.h benchapi.cu \
 	sched.cu sched_rr.cu sched_rrf.cu sched_fca.cu sched_rrm.cu \
-	sched_host.cu sched_prl.cu \
-	sched_dyn.cu sched_dyn_rr.cu sched_dyn_rrf.cu sched_dyn_fca.cu sched_dyn_rrm.cu \
-	sched_prl_rrp.cu
+	sched_dyn.cu sched_dyn_rr.cu sched_dyn_rrf.cu sched_dyn_fca.cu sched_dyn_rrm.cu
 
 sdtbs_LDADD = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
+		../../benchmarks/inhouse/mklc/libmklc.a \
 		../../benchmarks/inhouse/gma/libgma.a \
 		../../benchmarks/inhouse/lma/liblma.a \
 		../../benchmarks/kmeans/libkmeans.a

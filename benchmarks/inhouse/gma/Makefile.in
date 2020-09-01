@@ -106,7 +106,7 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgma_a_AR = $(AR) $(ARFLAGS)
 libgma_a_LIBADD =
-am_libgma_a_OBJECTS = gma.$(OBJEXT) gma_reloc.$(OBJEXT)
+am_libgma_a_OBJECTS = gma.$(OBJEXT)
 libgma_a_OBJECTS = $(am_libgma_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -252,7 +252,7 @@ CLEANFILES = *~
 DISTCLEANFILES = *~
 AM_CPPFLAGS = 
 noinst_LIBRARIES = libgma.a
-libgma_a_SOURCES = gma.cu gma_reloc.cu
+libgma_a_SOURCES = gma.cu
 all: all-am
 
 .SUFFIXES:

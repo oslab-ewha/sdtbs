@@ -5,7 +5,7 @@
 
 #include "../../benchmarks/benchapi.h"
 
-#define MAX_QUEUED_KERNELS	20
+#define MAX_QUEUED_KERNELS	2000
 #define MAX_BENCHES	20
 #define MAX_ARGS	5
 #define N_THREADS_PER_mTB	32
@@ -22,45 +22,19 @@ typedef int (*bench_func_t)(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void
 
 typedef struct {
 	skid_t		skid;
-	void		**d_args;
-	int		*d_pres;
+	void		*args[MAX_ARGS];
+	int		res;
 	dim3		dimGrid, dimBlock;
 	unsigned	n_tbs, n_mtbs_per_tb;
 } skrun_t;
 
-typedef struct {
-	/* number of mAT */
-	unsigned	n_mATs;
-	/* mtb allocation tables */
-	unsigned char	**mATs;
-	/* mtb offset tables */
-	unsigned short	**mOTs;
-} fkinfo_static_t;
-
-typedef struct {
-	unsigned char	*brids_submitted;
-} fkinfo_dyn_t;
-
 typedef enum {
 	TBS_TYPE_HW = 1,
-	TBS_TYPE_HW_RELOC,
-	TBS_TYPE_DYNAMIC,
-	TBS_TYPE_SOLO,
-	TBS_TYPE_HOST,
-	TBS_TYPE_PARALLEL
+	TBS_TYPE_DYNAMIC
 } tbs_type_t;
 
 typedef struct {
-	BOOL		*pdone;
-	unsigned char	*epochs_dev;
-	unsigned char	*epochs_host;
-	unsigned char	*mAT;
-	unsigned short	*mOT;
-} fkinfo_host_t;
-
-typedef struct {
-	int		n_qks;
-//	skrun_t		*skruns[MAX_QUEUED_KERNELS];
+	BOOL		sched_done;
 	unsigned	sched_id;
 	tbs_type_t	tbs_type;
 	void *		sched_arg;
@@ -68,14 +42,7 @@ typedef struct {
 	unsigned	n_max_mtbs_per_sm;
 	unsigned	n_max_mtbs_per_MTB;
 	unsigned	n_mtbs;
-	unsigned	n_tbs;
 	BOOL		initialized;
-
-	union {
-		fkinfo_static_t	sta;
-		fkinfo_dyn_t	dyn;
-		fkinfo_host_t	host;
-	} u;
 } fedkern_info_t;
 
 typedef struct {
@@ -83,7 +50,6 @@ typedef struct {
 	skid_t		skid;
 	cookarg_func_t	cookarg_func;
 	bench_func_t	bench_func;
-	bench_func_t	bench_func_noreloc;
 } benchinfo_t;
 
 typedef struct {
@@ -112,10 +78,9 @@ __device__ void sleep_in_kernel(void);
 __device__ unsigned find_mtb_start(unsigned id_sm, unsigned idx_mtb_start, unsigned n_mtbs);
 __device__ unsigned get_n_active_mtbs(unsigned id_sm);
 
-__device__ int run_sub_kernel(skid_t skid, void *args[]);
+__device__ void run_sub_kernel(skrid_t skrid);
 
 fedkern_info_t *create_fedkern_info(void);
-fedkern_info_t *create_fedkern_info_kernel(fedkern_info_t *fkinfo);
 void free_fedkern_info(fedkern_info_t *fkinfo);
 
 BOOL setup_gpu_devinfo(void);
@@ -124,9 +89,6 @@ unsigned get_n_mTBs_for_threads(unsigned n_threads);
 BOOL is_sm_avail(int id_sm, unsigned n_mTBs);
 unsigned get_sm_n_sched_mTBs(int id_sm);
 void use_next_mAT(int id_sm);
-
-void run_schedule_dyn(fedkern_info_t *fkinfo);
-void run_schedule_host(fedkern_info_t *fkinfo);
 
 void init_tickcount(void);
 unsigned get_tickcount(void);

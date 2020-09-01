@@ -92,22 +92,11 @@ loopcalc(void *args[])
 int
 bench_loopcalc(cudaStream_t strm, dim3 dimGrid, dim3 dimBlock, void *args[])
 {
-	void	**d_args;
-	int	res, *d_pres;
 	skrid_t	skrid;
+	int	res;
 
-	cudaMalloc(&d_args, sizeof(void *) * 2);
-	cudaMalloc(&d_pres, sizeof(int));
-	cudaMemcpyAsync(d_args, args, sizeof(void *) * 2, cudaMemcpyHostToDevice, strm);
-	cudaStreamSynchronize(strm);
-
-	skrid = launch_kernel(LOOPCALC, strm, dimGrid, dimBlock, d_args, d_pres);
-	wait_kernel(skrid, strm);
-
-	cudaMemcpyAsync(&res, d_pres, sizeof(int), cudaMemcpyDeviceToHost, strm);
-	cudaStreamSynchronize(strm);
-	cudaFree(d_args);
-	cudaFree(d_pres);
+	skrid = launch_kernel(LOOPCALC, strm, dimGrid, dimBlock, args);
+	wait_kernel(skrid, strm, &res);
 
 	return res;
 }

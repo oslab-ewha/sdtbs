@@ -5374,7 +5374,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/sdtbs/Makefile benchmarks/Makefile benchmarks/inhouse/Makefile benchmarks/inhouse/loopcalc/Makefile benchmarks/inhouse/gma/Makefile benchmarks/inhouse/lma/Makefile benchmarks/kmeans/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/sdtbs/Makefile benchmarks/Makefile benchmarks/inhouse/Makefile benchmarks/inhouse/loopcalc/Makefile benchmarks/inhouse/mklc/Makefile benchmarks/inhouse/gma/Makefile benchmarks/inhouse/lma/Makefile benchmarks/kmeans/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6130,6 +6130,7 @@ do
     "benchmarks/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/Makefile" ;;
     "benchmarks/inhouse/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/Makefile" ;;
     "benchmarks/inhouse/loopcalc/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/loopcalc/Makefile" ;;
+    "benchmarks/inhouse/mklc/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/mklc/Makefile" ;;
     "benchmarks/inhouse/gma/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/gma/Makefile" ;;
     "benchmarks/inhouse/lma/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/inhouse/lma/Makefile" ;;
     "benchmarks/kmeans/Makefile") CONFIG_FILES="$CONFIG_FILES benchmarks/kmeans/Makefile" ;;

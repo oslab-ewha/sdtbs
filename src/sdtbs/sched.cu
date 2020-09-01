@@ -9,7 +9,7 @@ extern sched_t	sched_rrp;
 
 static sched_t	*all_sched[] = {
 	&sched_hw,
-	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, &sched_rrp, NULL
+	&sched_rr, &sched_rrf, &sched_fca, &sched_rrm, NULL
 };
 
 sched_t	*sched = &sched_hw;
@@ -23,8 +23,6 @@ extern BOOL run_native_tbs(unsigned *pticks);
 extern BOOL run_sd_tbs(unsigned *pticks);
 
 extern void assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char skrid);
-extern void assign_fedkern_brid_dyn(fedkern_info_t *fkinfo, unsigned char brid);
-extern void assign_fedkern_brid_kernel(fedkern_info_t *d_fkinfo, unsigned char brid);
 
 extern void init_skrun(void);
 
@@ -42,25 +40,6 @@ setup_sched(const char *strpol)
 			sched = all_sched[i];
 			type = sched->type;
 			sched_id = i + 1;
-
-			if (strpol[len] == 'R') {
-				if (sched->type != TBS_TYPE_HW)
-					FATAL(1, "invalid policy: %s", strpol);
-				type = TBS_TYPE_HW_RELOC;
-				len++;
-			}
-			else if (strpol[len] == 'O') {
-				type = TBS_TYPE_SOLO;
-				len++;
-			}
-			else if (strpol[len] == 'H') {
-				type = TBS_TYPE_HOST;
-				len++;
-			}
-                        else if (strpol[len] == 'P') {
-				type = TBS_TYPE_PARALLEL;
-				len++;
-			}
 
 			if (strpol[len] ==':')
 				sched_argstr = strdup(strpol + len + 1);
@@ -83,26 +62,12 @@ init_sched(void)
 	n_max_mtbs = n_sm_count * n_max_mtbs_per_sm;
 }
 
-void
-run_schedule_dyn(fedkern_info_t *fkinfo)
-{
-	benchrun_t	*brun;
-	int	i, j;
-
-	brun = benchruns;
-	for (i = 0; i < n_benches; i++, brun++) {
-		for (j = 0; j < brun->dimGrid.y * brun->dimGrid.x; j++) {
-			assign_fedkern_brid_kernel(fkinfo, i + 1);
-		}
-	}
-}
-
 extern "C" BOOL
 run_tbs(unsigned *pticks)
 {
 	init_skrun();
 
-	if (sched->type == TBS_TYPE_HW || sched->type == TBS_TYPE_HW_RELOC)
+	if (sched->type == TBS_TYPE_HW)
 		return run_native_tbs(pticks);
 	else
 		return run_sd_tbs(pticks);

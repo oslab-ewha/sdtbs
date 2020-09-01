@@ -10,6 +10,9 @@
 #define mTB_ALLOC_TABLE_MY(id_sm)	(mATs + mTB_TOTAL_COUNT() * EPOCH_MY(id_sm))
 #define SKRID(id_sm, idx)	mTB_ALLOC_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
 #define SKRID_MY(id_sm)		mTB_ALLOC_TABLE_MY(id_sm)[mTB_INDEX_MY(id_sm) - 1]
+
+#define SKR_N_TBS_SCHED(skrid)	skr_n_tbs_sched[skrid - 1]
+
 #define BRK_INDEX_EPOCH(id_sm, idx, epch)	mTB_ALLOC_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
 
 #define BRK_N_MTBS_ASSIGNABLE(brid)	brk_n_mtbs_assignable[brid - 1]
@@ -28,15 +31,13 @@
 #define mTB_SYNC_EPOCH(id_sm, idx, epch)	mTB_SYNC_TABLE_EPOCH(epch)[mTB_INDEX(id_sm, idx) - 1]
 #define mTB_SYNC(id_sm, idx)	mTB_SYNC_TABLE(id_sm, idx)[mTB_INDEX(id_sm, idx) - 1]
 
-#define IS_SCHEDULE_DONE()	(n_tbs_assignable == d_fkinfo->n_tbs)
-
 extern __device__ BOOL	going_to_shutdown;
 
 __device__ static volatile int	in_scheduling;
 __device__ static fedkern_info_t	*d_fkinfo;
 
 /* epoch directory for mTB allocation table */
-__device__ static volatile unsigned char	*mATs;
+__device__ static volatile unsigned short	*mATs;
 __device__ static volatile unsigned	*mtb_epochs;
 
 /* offset in TB per mTB */
@@ -44,13 +45,10 @@ __device__ static volatile unsigned short	*mOTs;
 /* sync counter per mTB */
 __device__ static volatile unsigned short	*mSTs;
 
-/* number of assignable mtbs per brun kernel */
-__device__ static volatile unsigned	brk_n_mtbs_assignable[MAX_BENCHES];
+/* number of scheduled mtbs per skr */
+__device__ static volatile unsigned short	*skr_n_tbs_sched;
 
-__device__ static volatile unsigned	n_tbs_assignable;
 __device__ static volatile unsigned	cur_skrid;
-
-__device__ static volatile unsigned	n_tbs_sched;
 
 __device__ unsigned cu_get_tb_sm_rr(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
 __device__ unsigned cu_get_tb_sm_rrf(fedkern_info_t *fkinfo, unsigned n_mtbs, unsigned *pidx_mtb_start);
@@ -76,20 +74,20 @@ unlock_scheduling(void)
 static __device__ skrid_t
 get_sched_skrid(void)
 {
-	while (!IS_SCHEDULE_DONE()) {
+	while (!going_to_shutdown) {
 		skrun_t	*skr = &d_skruns[cur_skrid];
 		skid_t	skid;
 		skid = *(volatile skid_t *)(&skr->skid);
 		if (skid != 0) {
 			skrid_t	skrid = cur_skrid + 1;
 
-			n_tbs_sched++;
-			if (n_tbs_sched == skr->n_tbs) {
+			SKR_N_TBS_SCHED(skrid)++;
+			if (SKR_N_TBS_SCHED(skrid) == skr->n_tbs)
 				cur_skrid++;
-				n_tbs_sched = 0;
-			}
 			return skrid;
 		}
+		if (d_fkinfo->sched_done)
+			return 0;
 		sleep_in_kernel();
 	}
 	return 0;
@@ -101,8 +99,9 @@ assign_tb(void)
 	skrun_t		*skr;
 	unsigned	id_sm_sched;
 	unsigned	idx_mtb_start;
-	unsigned char	skrid;
-	int	i;
+	unsigned	off_tb_base;
+	skrid_t		skrid;
+	int		i;
 
 	skrid = get_sched_skrid();
 	if (skrid == 0)
@@ -130,36 +129,31 @@ assign_tb(void)
 	if (id_sm_sched == 0)
 		return FALSE;
 
+	off_tb_base = SKR_N_TBS_SCHED(skrid) * skr->n_mtbs_per_tb;
 	for (i = 0; i < skr->n_mtbs_per_tb; i++) {
 		if (SKRID(id_sm_sched, idx_mtb_start + i) == 0) {
 			SKRID(id_sm_sched, idx_mtb_start + i) = skrid;
-			mTB_OFFSET_TB(id_sm_sched, idx_mtb_start + i) = BRK_N_MTBS_ASSIGNABLE(skrid) + i;
+			mTB_OFFSET_TB(id_sm_sched, idx_mtb_start + i) = off_tb_base + i;
 			mTB_SYNC(id_sm_sched, idx_mtb_start + i) = 0;
 		}
 		else {
 			int	epoch_next = (EPOCH(id_sm_sched, idx_mtb_start + i) + 1) % EPOCH_MAX;
 			BRK_INDEX_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = skrid;
-			mTB_OFFSET_TB_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = BRK_N_MTBS_ASSIGNABLE(skrid) + i;
+			mTB_OFFSET_TB_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = off_tb_base + i;
 			mTB_SYNC_EPOCH(id_sm_sched, idx_mtb_start + i, epoch_next) = 0;
 		}
 	}
-
-	BRK_N_MTBS_ASSIGNABLE(skrid) += skr->n_mtbs_per_tb;
-	n_tbs_assignable++;
+	SKR_N_TBS_SCHED(skrid)++;
 	return TRUE;
 }
 
 static __device__ void
 run_schedule_in_kernel(void)
 {
-	if (d_fkinfo->tbs_type == TBS_TYPE_SOLO) {
-		sleep_in_kernel();
-		return;
-	}
 	if (lock_scheduling() < 0)
 		return;
 
-	if (IS_SCHEDULE_DONE()) {
+	if (going_to_shutdown) {
 		unlock_scheduling();
 		return;
 	}
@@ -206,7 +200,7 @@ get_n_active_mtbs(unsigned id_sm)
 }
 
 __device__ skrid_t
-get_skrid_dyn(BOOL *pis_primary_mtb)
+get_skrid_dyn(void)
 {
 	unsigned	id_sm;
 
@@ -216,15 +210,10 @@ get_skrid_dyn(BOOL *pis_primary_mtb)
 		skrid_t	skrid;
 
 		skrid = SKRID_MY(id_sm);
-		if (skrid != 0) {
-			if (IS_LEADER_THREAD() && mTB_OFFSET_TB_MY(id_sm) == 0)
-				*pis_primary_mtb = TRUE;
-			else
-				*pis_primary_mtb = FALSE;
+		if (skrid != 0)
 			return skrid;
-		}
 
-		if (IS_SCHEDULE_DONE())
+		if (going_to_shutdown || d_fkinfo->sched_done)
 			break;
 
 		if (IS_LEADER_THREAD()) {
@@ -300,7 +289,7 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	d_fkinfo = _fkinfo;
 
 	size = EPOCH_MAX * mTB_TOTAL_COUNT();
-	mATs = (volatile unsigned char *)malloc(size);
+	mATs = (volatile unsigned short *)malloc(size * sizeof(unsigned short));
 	for (i = 0; i < size; i++) {
 		mATs[i] = 0;
 	}
@@ -326,12 +315,16 @@ setup_dyn_sched(fedkern_info_t *_fkinfo)
 	for (i = 0; i < mTB_TOTAL_COUNT(); i++) {
 		mtb_epochs[i] = 0;
 	}
+	skr_n_tbs_sched = (unsigned short *)malloc(MAX_QUEUED_KERNELS * sizeof(unsigned short));
+	for (i = 0; i < MAX_QUEUED_KERNELS; i++) {
+		skr_n_tbs_sched[i] = 0;
+	}
 }
 
 __device__ void
 try_setup_dyn_sched(fedkern_info_t *_fkinfo)
 {
-	if (_fkinfo->tbs_type == TBS_TYPE_SOLO || blockIdx.x != 0 || blockIdx.y != 0) {
+	if (blockIdx.x != 0 || blockIdx.y != 0) {
 		while (TRUE) {
 			if (*(volatile BOOL *)&_fkinfo->initialized)
 				return;
@@ -340,18 +333,4 @@ try_setup_dyn_sched(fedkern_info_t *_fkinfo)
 	}
 	setup_dyn_sched(_fkinfo);
 	d_fkinfo->initialized = TRUE;
-}
-
-__device__ void
-run_schedule_as_solo(fedkern_info_t *fkinfo)
-{
-	setup_dyn_sched(fkinfo);
-	d_fkinfo->initialized = TRUE;
-	while (!IS_SCHEDULE_DONE()) {
-		while (TRUE) {
-			if (!assign_tb())
-				break;
-		}
-		sleep_in_kernel();
-	}
 }
