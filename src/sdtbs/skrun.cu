@@ -204,6 +204,8 @@ kernel_init_skrun(tbs_type_t type, skrun_t *skruns, unsigned *mtbs_done_cnts)
 void
 init_skrun(void)
 {
+	cudaError_t	err;
+
 	cudaStreamCreate(&strm_submit);
 
 	cudaMalloc(&g_skruns, sizeof(skrun_t) * MAX_QUEUED_KERNELS);
@@ -216,10 +218,18 @@ init_skrun(void)
 
 	dim3 dimGrid(1,1), dimBlock(1,1);
 	kernel_init_skrun<<<dimGrid, dimBlock>>>(sched->type, g_skruns, g_mtbs_done_cnts);
-	cudaDeviceSynchronize();
+	err = cudaGetLastError();
+	if (err != cudaSuccess)
+		error("failed to initialize skrun: %s\n", cudaGetErrorString(err));
+	else
+		cudaDeviceSynchronize();
 }
 
 void
 fini_skrun(void)
 {
+	void	*retval;
+
+	checker_done = TRUE;
+	pthread_join(checker, &retval);
 }

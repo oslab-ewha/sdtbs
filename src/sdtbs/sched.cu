@@ -25,6 +25,7 @@ extern BOOL run_sd_tbs(unsigned *pticks);
 extern void assign_fedkern_brun(fedkern_info_t *fkinfo,  benchrun_t *brun, unsigned char skrid);
 
 extern void init_skrun(void);
+extern void fini_skrun(void);
 
 extern "C" void
 setup_sched(const char *strpol)
@@ -65,10 +66,16 @@ init_sched(void)
 extern "C" BOOL
 run_tbs(unsigned *pticks)
 {
+	BOOL	res;
+
 	init_skrun();
 
 	if (sched->type == TBS_TYPE_HW)
-		return run_native_tbs(pticks);
+		res = run_native_tbs(pticks);
 	else
-		return run_sd_tbs(pticks);
+		res = run_sd_tbs(pticks);
+
+	fini_skrun();
+
+	return res;
 }

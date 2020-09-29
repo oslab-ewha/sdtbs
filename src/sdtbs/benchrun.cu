@@ -1,6 +1,10 @@
 #include "sdtbs_cu.h"
 
+#include <cuda.h>
+
 #include <pthread.h>
+
+static CUcontext	context;
 
 pthread_t	threads[MAX_BENCHES];
 
@@ -12,6 +16,7 @@ bench_func(void *ctx)
 	cudaStream_t	strm;
 	int		res;
 
+	cuCtxSetCurrent(context);
 	cudaStreamCreate(&strm);
 	bench = brun->info->bench_func;
 	res = bench(strm, brun->dimGrid, brun->dimBlock, brun->args);
@@ -38,6 +43,7 @@ wait_benchruns(void)
 {
 	int	i;
 
+	cuCtxGetCurrent(&context);
 	for (i = 0; i < n_benches; i++) {
 		void	*ret;
 		pthread_join(threads[i], &ret);

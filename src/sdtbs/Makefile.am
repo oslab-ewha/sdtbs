@@ -14,6 +14,7 @@ sdtbs_LDADD = ../../benchmarks/inhouse/loopcalc/libloopcalc.a \
 		../../benchmarks/inhouse/mklc/libmklc.a \
 		../../benchmarks/inhouse/gma/libgma.a \
 		../../benchmarks/inhouse/lma/liblma.a \
-		../../benchmarks/kmeans/libkmeans.a
+		../../benchmarks/kmeans/libkmeans.a \
+		-lcuda -lcudart
 
 include $(top_srcdir)/makefile.cu

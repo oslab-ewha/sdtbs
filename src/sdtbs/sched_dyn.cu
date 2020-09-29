@@ -81,12 +81,13 @@ get_sched_skrid(void)
 		if (skid != 0) {
 			skrid_t	skrid = cur_skrid + 1;
 
-			SKR_N_TBS_SCHED(skrid)++;
-			if (SKR_N_TBS_SCHED(skrid) == skr->n_tbs)
+			if (SKR_N_TBS_SCHED(skrid) == skr->n_tbs) {
 				cur_skrid++;
+				continue;
+			}
 			return skrid;
 		}
-		if (d_fkinfo->sched_done)
+		if (*(volatile BOOL *)&d_fkinfo->sched_done)
 			return 0;
 		sleep_in_kernel();
 	}
@@ -213,7 +214,7 @@ get_skrid_dyn(void)
 		if (skrid != 0)
 			return skrid;
 
-		if (going_to_shutdown || d_fkinfo->sched_done)
+		if (going_to_shutdown || *(volatile BOOL *)&d_fkinfo->sched_done)
 			break;
 
 		if (IS_LEADER_THREAD()) {
